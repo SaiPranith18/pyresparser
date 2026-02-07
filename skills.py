@@ -19,7 +19,8 @@ def extract_skills_from_resume(text, skills_list):
     return skills
 
 if __name__ == '__main__':
-    text = extract_text_from_pdf(r"C:\Users\SANKET\Downloads\Untitled-resume.pdf")
+    text=None
+    text = extract_text_from_pdf(text)
 
    
     skills_list = ['Python', 'Data Analysis', 'Machine Learning', 'Communication', 'Project Management', 'Deep Learning', 'SQL', 'Tableau']
