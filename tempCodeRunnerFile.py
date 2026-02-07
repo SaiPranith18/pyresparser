@@ -1,0 +1,1 @@
+text = extract_text_from_pdf(r"file_path")
