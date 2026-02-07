@@ -1,1 +1,2 @@
-text = extract_text_from_pdf(r"file_path")
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)

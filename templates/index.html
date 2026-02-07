@@ -13,7 +13,7 @@
     <div class="container mt-10">
         <h1 class="class-head p-2">Resume Parser</h1>
 
-        <form method="POST" enctype="multipart/form-data">
+        <form id="resumeForm" method="POST" enctype="multipart/form-data">
             <div class="head mb-4">
                 <input type="file" name="resume" accept=".pdf,.doc,.docx" required>
                 <button type="submit">Submit Resume</button>
@@ -27,35 +27,83 @@
                     <option value="name">name</option>
                     <option value="certifications">Certifications</option>
                 </select>
-            </div>
+                <div id="resultBox" style="margin-top:20px;"></div>
 
-            {% if section == "name" %}
-            <div class="alert alert-success mt-4">
-                <strong>Extracted Name:</strong> {{ name }}
-            </div>
-            {% elif section == "Full Resume" %}
-            <h3>Full Resume Text</h3>
-            <div style="border:1px solid #333; padding:10px; white-space:pre-wrap;">
-                {{ resume_text }}
-            </div>
-            {% elif section == "skills" %}
-            <h4>Skills</h4>
-            <div style="border:1px solid #333; padding:10px; white-space:pre-wrap;">
-                {{ extracted_skills }}
-            </div>
-            {% elif section == "Education" %}
-            <h4>Education</h4>
-            <div style="border:1px solid #333; padding:10px; white-space:pre-wrap;">
-                {{ extracted_education }}
-            </div>
-            {% endif %}
+        </form>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const form = document.getElementById("resumeForm");
+                const resultBox = document.getElementById("resultBox");
 
+                form.addEventListener("submit", function (e) {
+                    e.preventDefault();
 
+                    const formData = new FormData(form);
+
+                    resultBox.style.display = "none";
+                    resultBox.innerHTML = "";
+
+                    fetch("/extract", {
+                        method: "POST",
+                        body: formData
+                    })
+                        .then(res => res.json())
+                        .then(data => {
+                            resultBox.style.display = "block";
+
+                            if (Array.isArray(data.result)) {
+                                resultBox.innerHTML = data.result.join(", ");
+                            } else {
+                                resultBox.innerHTML = data.result || "No data found";
+                            }
+                        })
+                        .catch(err => {
+                            resultBox.innerHTML = "Error occurred";
+                            console.error(err);
+                        });
+                });
+            });
+
+              $(document).ready(function () {
+
+                let formData = new FormData(this);
+
+                $.ajax({
+                    url: "/upload",
+                    type: "POST",
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+
+                    success: function (response) {
+                        console.log("AJAX RESPONSE:", response);
+
+                        let output =
+                            "<h4>Education Details</h4>" +
+                            "<p><b>Degree:</b> " + (response.degree || "N/A") + "</p>" +
+                            "<p><b>University:</b> " + (response.university || "N/A") + "</p>" +
+                            "<p><b>CGPA:</b> " + (response.cgpa || "N/A") + "</p>" +
+                            "<p><b>Year:</b> " + (response.year || "N/A") + "</p>";
+
+                        $("#result").html(output);
+                    },
+
+                    error: function (xhr, status, error) {
+                        console.log("XHR:", xhr);
+                        console.log("STATUS:", status);
+                        console.log("ERROR:", error);
+
+                        $("#result").html(
+                            "<pre>" + xhr.responseText + "</pre>"
+                        );
+                    }
+
+                });
+            });
             
 
 
-
-        </form>
+        </script>
 
 </body>
 </head>

@@ -6,14 +6,12 @@ from pdfminer.high_level import extract_text
 from nlp_utils import extract_name_nlp
 from flask import Flask,request
 
+
 def extract_text_from_pdf(pdf_path):
     return extract_text(pdf_path)
 
 def extract_name_from_resume(text):
     name = None
-    UPLOAD_FOLDER="uploads"
-
-    
     pattern = r"(\b[A-Z]+\b)\s(\b[A-Z]+\b)"
     match = re.search(pattern, text)
     if match:
