@@ -10,7 +10,6 @@ def extract_text_from_pdf(pdf_path):
 def extract_education_from_resume(text):
     education = []
 
-   
     pattern = r"(?i)(?:(?:Bachelor|B\.S\.|B\.A\.|B\.Tech\.|Master|M\.S\.|M\.A\.|Ph\.D\.)\s(?:[A-Za-z]+\s)*[A-Za-z]+)"
     matches = re.findall(pattern, text)
     for match in matches:

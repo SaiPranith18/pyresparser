@@ -13,7 +13,7 @@ def extract_name_from_resume(text):
     name = None
     UPLOAD_FOLDER="uploads"
 
-   
+    
     pattern = r"(\b[A-Z]+\b)\s(\b[A-Z]+\b)"
     match = re.search(pattern, text)
     if match:
