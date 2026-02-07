@@ -44,23 +44,23 @@ button {
     outline: none;
     cursor: pointer;
 
-    /* kill click flash */
+   
     -webkit-tap-highlight-color: transparent;
 }
 
-/* Hover */
+
 .form-select:hover {
     border-color: #a0a8b0;
 }
 
-/* Focus = smooth glow, no blink */
+
 .form-select:focus {
     border-color: #4f8cff;
     box-shadow: 0 0 0 4px rgba(79, 140, 255, 0.25);
     background-color: #fff;
 }
 
-/* Remove Windows blue expand flash */
+
 .form-select::-ms-expand {
     display: none;
 }

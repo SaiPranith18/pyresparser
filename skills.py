@@ -9,7 +9,7 @@ def extract_text_from_pdf(pdf_path):
 def extract_skills_from_resume(text, skills_list):
     skills = []
 
-    # Search for skills in the resume text
+   
     for skill in skills_list:
         pattern = r"\b{}\b".format(re.escape(skill))
         match = re.search(pattern, text, re.IGNORECASE)
@@ -21,7 +21,7 @@ def extract_skills_from_resume(text, skills_list):
 if __name__ == '__main__':
     text = extract_text_from_pdf(r"C:\Users\SANKET\Downloads\Untitled-resume.pdf")
 
-    # List of predefined skills
+   
     skills_list = ['Python', 'Data Analysis', 'Machine Learning', 'Communication', 'Project Management', 'Deep Learning', 'SQL', 'Tableau']
 
     extracted_skills = extract_skills_from_resume(text, skills_list)
