@@ -22,7 +22,7 @@ def extract_name_from_resume(text):
 if __name__ == '__main__':
     
     file = request.files["resume"]
-    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file_path = os.path.join(UPLOAD_FOLDER, file.filename) # type: ignore
     file.save(file_path)
     text = extract_text_from_pdf(file_path)
     name = extract_name_nlp(text)

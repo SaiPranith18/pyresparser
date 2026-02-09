@@ -1,15 +1,16 @@
 import re
 
-def extract_education_from_resume(text):
+def extract_certifications_from_resume(text):
     lines = [l.strip() for l in text.split("\n") if l.strip()]
 
-    education_lines = []
+    certifications_lines = []
     capture = False
 
+    
     stop_keywords = [
         "skills",
         "projects",
-        "certifications",
+        "education",
         "experience",
         "summary",
         "about",
@@ -17,19 +18,22 @@ def extract_education_from_resume(text):
     ]
 
     for line in lines:
-        lower = line.lower()
+        Upper = line.lower()
+
       
-        if re.fullmatch(r"education", lower):
+        if re.fullmatch(r"certifications", Upper):
             capture = True
             continue
 
-        if capture and any(k in lower for k in stop_keywords):
+      
+        if capture and any(k in Upper for k in stop_keywords):
             break
 
         if capture:
-            education_lines.append(line)
+            certifications_lines.append(line)
+            
     cleaned = []
-    for line in education_lines:
+    for line in certifications_lines:
         if len(line) > 3 and line not in cleaned:
             cleaned.append(line)
 

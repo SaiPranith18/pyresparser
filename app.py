@@ -6,7 +6,8 @@ from flask import Flask, render_template, request,jsonify
 from pdfminer.high_level import extract_text
 from name import extract_name_from_resume
 from skills import extract_skills_from_resume
-from education import extract_education_from_resume,extract_text_from_pdf
+from education import extract_education_from_resume
+from certifications import extract_certifications_from_resume
 
 app = Flask(__name__)
 
@@ -22,6 +23,7 @@ def home():
     extracted_education = None
     selected_section = None
     section=None
+    certifications =None
 
     if request.method == "POST":
         file = request.files.get("resume")
@@ -47,11 +49,12 @@ def home():
             ]
             extracted_skills = extract_skills_from_resume(text, skills_list)
 
-            # Education extraction
+            
             extracted_education = extract_education_from_resume(text)
-            selected_section = None
             selected_section = request.form.get("section")
             section = request.form.get("section")
+
+            certifications = extract_certifications_from_resume(text)
     
   
 
@@ -63,6 +66,7 @@ def home():
     extracted_education=extracted_education,
     selected_section=selected_section,
     section=section,
+    certifications=certifications 
 )
 
 
@@ -97,6 +101,9 @@ def extract_ajax():
 
     elif section == "fulltext":
         result = text
+    
+    elif section == "certifications":
+        result = extract_certifications_from_resume(text)
 
     else:
         result = "Unknown category"
@@ -104,22 +111,8 @@ def extract_ajax():
     return jsonify({"result": result})
 
 
-@app.route("/upload", methods=["POST"])
-def upload():
-    return jsonify({  "degree": "B.Tech",
-        "university": "Test University",
-        "cgpa": "3.4",
-        "year": "3434"})
-
-
 if __name__ == "__main__":
-    app.run(debug=True, host="127.0.0.1", port=8000)
-
-
-
-
-
-
+    app.run(host="127.0.0.1", port=8000, debug=True)
 
 
 

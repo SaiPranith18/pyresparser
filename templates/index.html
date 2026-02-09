@@ -21,13 +21,15 @@
             <div class="mb-3">
                 <select name="section" class="form-select" required>
                     <option value="">Select what you want to extract</option>
+                    <option value="name">Name</option>
                     <option value="skills">Skills</option>
                     <option value="education">Education</option>
-                    <option value="Full Resume">Full Resume</option>
-                    <option value="name">name</option>
                     <option value="certifications">Certifications</option>
+                    <option value="fulltext">Resume</option>
                 </select>
-                <div id="resultBox" style="margin-top:20px;"></div>
+
+
+                <div id="resultBox" style="margin-top:20px; border: 1px solid black;"></div>
 
         </form>
         <script>
@@ -52,10 +54,11 @@
                             resultBox.style.display = "block";
 
                             if (Array.isArray(data.result)) {
-                                resultBox.innerHTML = data.result.join(", ");
+                                resultBox.innerHTML = "<pre>" + data.result.join("\n") + "</pre>";
                             } else {
-                                resultBox.innerHTML = data.result || "No data found";
+                                resultBox.innerHTML = "<pre>" + (data.result || "No data found") + "</pre>";
                             }
+
                         })
                         .catch(err => {
                             resultBox.innerHTML = "Error occurred";
@@ -64,43 +67,9 @@
                 });
             });
 
-              $(document).ready(function () {
 
-                let formData = new FormData(this);
 
-                $.ajax({
-                    url: "/upload",
-                    type: "POST",
-                    data: formData,
-                    contentType: false,
-                    processData: false,
 
-                    success: function (response) {
-                        console.log("AJAX RESPONSE:", response);
-
-                        let output =
-                            "<h4>Education Details</h4>" +
-                            "<p><b>Degree:</b> " + (response.degree || "N/A") + "</p>" +
-                            "<p><b>University:</b> " + (response.university || "N/A") + "</p>" +
-                            "<p><b>CGPA:</b> " + (response.cgpa || "N/A") + "</p>" +
-                            "<p><b>Year:</b> " + (response.year || "N/A") + "</p>";
-
-                        $("#result").html(output);
-                    },
-
-                    error: function (xhr, status, error) {
-                        console.log("XHR:", xhr);
-                        console.log("STATUS:", status);
-                        console.log("ERROR:", error);
-
-                        $("#result").html(
-                            "<pre>" + xhr.responseText + "</pre>"
-                        );
-                    }
-
-                });
-            });
-            
 
 
         </script>
