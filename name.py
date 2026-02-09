@@ -4,7 +4,7 @@ import os
 
 from pdfminer.high_level import extract_text
 from nlp_utils import extract_name_nlp
-from flask import Flask,request
+from flask import request
 
 
 def extract_text_from_pdf(pdf_path):

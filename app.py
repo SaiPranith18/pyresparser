@@ -8,6 +8,9 @@ from name import extract_name_from_resume
 from skills import extract_skills_from_resume
 from education import extract_education_from_resume
 from certifications import extract_certifications_from_resume
+from formatter import clean_fulltext_format
+
+
 
 app = Flask(__name__)
 
@@ -24,6 +27,7 @@ def home():
     selected_section = None
     section=None
     certifications =None
+    projects=None
 
     if request.method == "POST":
         file = request.files.get("resume")
@@ -31,21 +35,14 @@ def home():
         if file and file.filename:
             file_path = os.path.join(UPLOAD_FOLDER, file.filename)
             file.save(file_path)
-
-            # Extract resume text ONCE
+ 
             text = extract_text(file_path)
-
-            # Name extraction
             name = extract_name_from_resume(text)
-
-            # Full resume text
-            resume_text = text
-
-            # Skills extraction
+            resume_text = clean_fulltext_format(text)
             skills_list = [
                 "Python", "Data Analysis", "Machine Learning",
                 "Communication", "Project Management",
-                "Deep Learning", "SQL", "Tableau"
+                "Deep Learning", "MySQL", "Tableau"
             ]
             extracted_skills = extract_skills_from_resume(text, skills_list)
 
@@ -55,9 +52,7 @@ def home():
             section = request.form.get("section")
 
             certifications = extract_certifications_from_resume(text)
-    
-  
-
+            
     return render_template(
     "index.html",
     name=name,
@@ -66,7 +61,8 @@ def home():
     extracted_education=extracted_education,
     selected_section=selected_section,
     section=section,
-    certifications=certifications 
+    certifications=certifications,
+    projects=projects
 )
 
 
@@ -89,7 +85,7 @@ def extract_ajax():
         skills_list = [
             "Python", "Data Analysis", "Machine Learning",
             "Communication", "Project Management",
-            "Deep Learning", "SQL", "Tableau"
+            "Deep Learning", "MySQL", "Tableau"
         ]
         result = extract_skills_from_resume(text, skills_list)
 
@@ -100,7 +96,7 @@ def extract_ajax():
         result = extract_name_from_resume(text)
 
     elif section == "fulltext":
-        result = text
+        result = clean_fulltext_format(text)
     
     elif section == "certifications":
         result = extract_certifications_from_resume(text)

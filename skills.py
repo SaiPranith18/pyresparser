@@ -23,7 +23,7 @@ if __name__ == '__main__':
     text = extract_text_from_pdf(text)
 
    
-    skills_list = ['Python', 'Data Analysis', 'Machine Learning', 'Communication', 'Project Management', 'Deep Learning', 'SQL', 'Tableau']
+    skills_list = ['Python', 'Data Analysis', 'Machine Learning', 'Communication', 'Project Management', 'Deep Learning', 'MySQL', 'Tableau']
 
     extracted_skills = extract_skills_from_resume(text, skills_list)
 
@@ -31,3 +31,9 @@ if __name__ == '__main__':
         print("Skills:", extracted_skills)
     else:
         print("No skills found")
+ 
+
+
+
+
+

@@ -1,1 +1,1 @@
-   # return jsonify(edu) 
+clean_fulltext_format

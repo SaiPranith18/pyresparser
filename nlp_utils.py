@@ -43,7 +43,7 @@ def extract_section_nlp(text, section):
 
 
 def extract_name_nlp(text):
-    lines = text.splitlines()[:5]  # first 5 lines only
+    lines = text.splitlines()[:5] 
     joined = " ".join(lines)
 
     doc = nlp(joined)
@@ -59,46 +59,7 @@ def extract_name_nlp(text):
 
 
 
-def extract_education(pdf_path):
-    doc = fitz.open(pdf_path)
-    full_text = ""
 
-    for page in doc:
-        full_text += page.get_text()
-    text = full_text.lower()
-
-    edu_section_keywords = [
-        "education",
-        "academic qualifications",
-        "educational background",
-        "academics"
-    ]
-
-    
-    lines = text.split("\n")
-
-    education_block = []
-    capture = False
-
-    for line in lines:
-        line = line.strip()
-        if any(k in line for k in edu_section_keywords):
-            capture = True
-            continue
-
-        if capture and re.match(r"(skills|experience|projects|certifications|summary|profile)", line):
-            break
-
-        if capture and len(line) > 2:
-            education_block.append(line)
-
-    return education_block
-
-
-
-
-def education_block(text):
-    __doc__ = fitz.open(text)
      
    
 
