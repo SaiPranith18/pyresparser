@@ -1,28 +1,34 @@
 import re
 
 SECTION_KEYWORDS = [
-    "about me","summary", "education", "projects", "experience",
+    "about","summary", "education", "projects", "experience",
     "technical skills", "soft skills", "certifications", "certificates",
-    "declaration"
+    "declaration", "skills"
 ]
 
-def  clean_fulltext_format(raw_text):
+def clean_fulltext_format(raw_text):
     lines = raw_text.splitlines()
     formatted = []
+    paragraph_buffer = []
 
-    for i, line in enumerate(lines):
+    def flush_paragraph():
+        if paragraph_buffer:
+            formatted.append(" ".join(paragraph_buffer))
+            paragraph_buffer.clear()
+
+    for line in lines:
         stripped = line.strip()
 
         if not stripped:
+            flush_paragraph()
             formatted.append("")
             continue
 
-        is_heading = any(
-            stripped.lower() == keyword
-            for keyword in SECTION_KEYWORDS
-        )
+        
+        is_heading = any(stripped.lower() == keyword for keyword in SECTION_KEYWORDS)
 
         if is_heading:
+            flush_paragraph()
             formatted.append(stripped.upper())
             formatted.append("-" * 15)
             continue
@@ -30,12 +36,14 @@ def  clean_fulltext_format(raw_text):
         if re.fullmatch(r"-{4,}", stripped):
             continue
 
-      
         if stripped.startswith(("•", "-", "*")):
+            flush_paragraph()
             formatted.append(stripped)
             continue
 
-        
-        formatted.append(stripped)
+       
+        paragraph_buffer.append(stripped)
+
+    flush_paragraph()
 
     return "\n".join(formatted)

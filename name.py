@@ -12,11 +12,10 @@ def extract_text_from_pdf(pdf_path):
 
 def extract_name_from_resume(text):
     name = None
-    pattern = r"(\b[A-Z]+\b)\s(\b[A-Z]+\b)"
-    match = re.search(pattern, text)
+    pattern = r"\b([a-z]+)\s([a-z]+)\b"
+    match = re.search(pattern, text, re.IGNORECASE)
     if match:
-        name = match.group()
-
+        name = match.group().title()
     return name
 
 if __name__ == '__main__':

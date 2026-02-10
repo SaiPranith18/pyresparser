@@ -10,6 +10,7 @@ from education import extract_education_from_resume
 from certifications import extract_certifications_from_resume
 from formatter import clean_fulltext_format
 from projects import extract_projects_section
+from skills import extract_skills_from_resume
 
 
 
@@ -23,12 +24,13 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def home():
     name = None
     resume_text = None
-    extracted_skills = None
+    skills_section = None
     extracted_education = None
     selected_section = None
     section=None
     certifications =None
     projects=None
+   
 
     if request.method == "POST":
         file = request.files.get("resume")
@@ -40,31 +42,28 @@ def home():
             text = extract_text(file_path)
             name = extract_name_from_resume(text)
             resume_text = clean_fulltext_format(text)
-            skills_list = [
-                "Python", "Data Analysis", "Machine Learning",
-                "Communication", "Project Management",
-                "Deep Learning", "MySQL", "Tableau"
-            ]
-            extracted_skills = extract_skills_from_resume(text, skills_list)
+        
+        skills_section  = extract_skills_from_resume(text)
 
             
-            extracted_education = extract_education_from_resume(text)
-            selected_section = request.form.get("section")
-            section = request.form.get("section")
+        extracted_education = extract_education_from_resume(text)
+        selected_section = request.form.get("section")
+        section = request.form.get("section")
 
-            certifications = extract_certifications_from_resume(text)
-            projects = extract_projects_section(text)
+        certifications = extract_certifications_from_resume(text)
+        projects = extract_projects_section(text)
             
     return render_template(
     "index.html",
     name=name,
     resume_text=resume_text,
-    extracted_skills=extracted_skills,
+    skills_section = skills_section,
     extracted_education=extracted_education,
     selected_section=selected_section,
     section=section,
     certifications=certifications,
-    projects=projects
+    projects=projects,
+    
 )
 
 
@@ -84,12 +83,7 @@ def extract_ajax():
     text = extract_text(file_path)
 
     if section == "skills":
-        skills_list = [
-            "Python", "Data Analysis", "Machine Learning",
-            "Communication", "Project Management",
-            "Deep Learning", "MySQL", "Tableau"
-        ]
-        result = extract_skills_from_resume(text, skills_list)
+        result = extract_skills_from_resume(text)
 
     elif section == "education":
         result = extract_education_from_resume(text)
@@ -136,12 +130,7 @@ def api_parse_resume():
 
     try:
         if section == "skills":
-            skills_list = [
-                "Python", "Data Analysis", "Machine Learning",
-                "Communication", "Project Management",
-                "Deep Learning", "MySQL", "Tableau"
-            ]
-            result = extract_skills_from_resume(text, skills_list)
+           result = extract_skills_from_resume(text)
 
         elif section == "education":
             result = extract_education_from_resume(text)
