@@ -9,6 +9,7 @@ from skills import extract_skills_from_resume
 from education import extract_education_from_resume
 from certifications import extract_certifications_from_resume
 from formatter import clean_fulltext_format
+from projects import extract_projects_section
 
 
 
@@ -52,6 +53,7 @@ def home():
             section = request.form.get("section")
 
             certifications = extract_certifications_from_resume(text)
+            projects = extract_projects_section(text)
             
     return render_template(
     "index.html",
@@ -101,10 +103,85 @@ def extract_ajax():
     elif section == "certifications":
         result = extract_certifications_from_resume(text)
 
+    elif section == "projects":
+        result = extract_projects_section(text )
+
     else:
         result = "Unknown category"
 
     return jsonify({"result": result})
+
+
+@app.route("/api/parse", methods=["POST","GET","DELETE"])
+def api_parse_resume():
+    file = request.files.get("resume")
+    section = request.form.get("section")
+
+    if not file or not section:
+        return jsonify({
+            "status": "error",
+            "message": "resume file and section are required"
+        }), 400
+
+    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(file_path)
+
+    try:
+        text = extract_text(file_path)
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": "Failed to extract PDF text"
+        }), 500
+
+    try:
+        if section == "skills":
+            skills_list = [
+                "Python", "Data Analysis", "Machine Learning",
+                "Communication", "Project Management",
+                "Deep Learning", "MySQL", "Tableau"
+            ]
+            result = extract_skills_from_resume(text, skills_list)
+
+        elif section == "education":
+            result = extract_education_from_resume(text)
+
+        elif section == "projects":
+            result = extract_projects_section(text)
+
+        elif section == "certifications":
+            result = extract_certifications_from_resume(text)
+
+        elif section == "name":
+            result = extract_name_from_resume(text)
+
+        elif section == "fulltext":
+            result = clean_fulltext_format(text)
+
+        else:
+            return jsonify({
+                "status": "error",
+                "message": "Invalid section type"
+            }), 400
+
+        if not result:
+            return jsonify({
+                "status": "error",
+                "message": f"No data found for section: {section}"
+            })
+
+        return jsonify({
+            "status": "success",
+            "section": section,
+            "data": result
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
+
 
 
 if __name__ == "__main__":
