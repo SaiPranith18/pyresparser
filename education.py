@@ -18,8 +18,13 @@ def extract_education_from_resume(text):
 
     for line in lines:
         lower = line.lower()
-      
-        if re.fullmatch(r"education", lower):
+
+        # if "education" in lower and len(line.strip()) < 50:
+        #     capture = True
+        #     continue
+        if line.strip().lower() in ['education','education qualification','educational qualifications','academic qualifications',
+                                    'education & qualifications','education details','education background','academic background','educational profile','educational summary',
+                                     'academic credentials' ]:
             capture = True
             continue
 

@@ -21,7 +21,15 @@ def extract_certifications_from_resume(text):
         Upper = line.lower()
 
       
-        if re.fullmatch(r"certifications", Upper):
+        # if re.fullmatch(r"certifications", Upper):
+        #     capture = True
+        #     continue
+        if line.strip().lower() in["certifications","certification","certificates","professional certifications",
+                        "technical certifications","certifications & training","training & certifications","licenses & certifications",
+                        "credentials","professional credentials","certifications & courses","courses & certifications",
+                        "online certifications","professional development","technical training","workshops & certifications",
+                        "industry certifications"
+]:
             capture = True
             continue
 
