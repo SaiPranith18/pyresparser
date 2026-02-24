@@ -1,0 +1,36 @@
+# Flask and web framework
+flask>=2.0.0
+Werkzeug>=2.0.0
+
+# Database
+flask-sqlalchemy>=3.0.0
+SQLAlchemy>=2.0.0
+
+# PDF processing
+pdfminer.six>=20201018
+PyMuPDF>=1.19.0
+
+# OCR dependencies
+pytesseract>=0.3.10
+pdf2image>=1.16.0
+Pillow>=9.0.0
+
+# NLP
+spacy>=3.0.0
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.5.0/en_core_web_sm-3.5.0-py3-none-any.whl
+
+# Document AI - LayoutLMv3 for improved extraction
+transformers>=4.30.0
+torch>=2.0.0
+torchvision>=0.15.0
+accelerate>=0.20.0
+
+# Sentence Transformers for similarity calculations
+sentence-transformers>=2.2.0
+scikit-learn>=1.0.0
+
+# Other utilities
+python-docx>=0.8.11
+
+# Additional dependencies for new features
+numpy>=1.21.0

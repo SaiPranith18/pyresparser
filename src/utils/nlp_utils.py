@@ -56,24 +56,3 @@ def extract_name_nlp(text):
             if 2 <= len(words) <= 3:
                 candidates.append(ent.text)
     return max(candidates, key=len) if candidates else None
-
-
-
-
-     
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
