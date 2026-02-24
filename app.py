@@ -1,10 +1,16 @@
 import os
 import re
 import pdfminer
-import logging
-from typing import Dict, Any, Tuple, Optional
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request,jsonify
+from pdfminer.high_level import extract_text
+from name import extract_name_from_resume
+from skills import extract_skills_from_resume
+from education import extract_education_from_resume
+from certifications import extract_certifications_from_resume
+from formatter import clean_fulltext_format
+from projects import extract_projects_section
+
 
 
 app = Flask(__name__)
@@ -268,18 +274,9 @@ def home():
     skills_section = None
     extracted_education = None
     selected_section = None
-    section = None
-    certifications = None
-    projects = None
-    overall_accuracy = 0.0
-    
-    
-    languages_section = None
-    interests_section = None
-    achievements_section = None
-    publications_section = None
-    volunteer_section = None
-    summary_section = None
+    section=None
+    certifications =None
+    projects=None
 
     if request.method == "POST":
         file = request.files.get("resume")
@@ -287,99 +284,40 @@ def home():
         text_confidence = 0.0
 
         if file and file.filename:
-            try:
-                file_path = os.path.join(UPLOAD_FOLDER, file.filename)
-                file.save(file_path)
-                
-                
-                text, text_confidence = extract_text_from_pdf(file_path)
-                confidence_scores["text_confidence"] = text_confidence
-                logger.info(f"Extracted text length: {len(text)}, Confidence: {text_confidence}")
-                
-                
-                
-                original_filename = file.filename if file else ""
-                name, name_confidence = extract_name_with_filename_fallback(text, original_filename)
-                confidence_scores["name_confidence"] = name_confidence
-                
-                
-                resume_text = clean_fulltext_format(text)
-                
-                
-                pdf_path_for_layoutlm = file_path
-                
-                skills_section, skills_confidence = extract_section_from_resume(
-                    text, "skills", pdf_path_for_layoutlm
-                )
-                confidence_scores["skills_confidence"] = skills_confidence
-                
-                extracted_education, education_confidence = extract_section_from_resume(
-                    text, "education", pdf_path_for_layoutlm
-                )
-                confidence_scores["education_confidence"] = education_confidence
-                
-                certifications, cert_confidence = extract_section_from_resume(
-                    text, "certifications", pdf_path_for_layoutlm
-                )
-                confidence_scores["certifications_confidence"] = cert_confidence
-                
-                projects, projects_confidence = extract_section_from_resume(
-                    text, "projects", pdf_path_for_layoutlm
-                )
-                confidence_scores["projects_confidence"] = projects_confidence
-                
-                
-                if NEW_SECTIONS_AVAILABLE:
-                    languages_section, languages_conf = extract_languages_from_resume(text)
-                    confidence_scores["languages_confidence"] = languages_conf
-                    
-                    interests_section, interests_conf = extract_interests_from_resume(text)
-                    confidence_scores["interests_confidence"] = interests_conf
-                    
-                    achievements_section, achievements_conf = extract_achievements_from_resume(text)
-                    confidence_scores["achievements_confidence"] = achievements_conf
-                    
-                    publications_section, publications_conf = extract_publications_from_resume(text)
-                    confidence_scores["publications_confidence"] = publications_conf
-                    
-                    volunteer_section, volunteer_conf = extract_volunteer_from_resume(text)
-                    confidence_scores["volunteer_confidence"] = volunteer_conf
-                    
-                    summary_section, summary_conf = extract_summary_from_resume(text)
-                    confidence_scores["summary_confidence"] = summary_conf
-                
-                selected_section = request.form.get("section")
-                section = request.form.get("section")
-                
-                overall_accuracy = calculate_overall_accuracy()
-                
-            except Exception as e:
-                logger.error(f"Error processing resume: {e}")
-                overall_accuracy = 0.0
+            file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+            file.save(file_path)
+ 
+            text = extract_text(file_path)
+            name = extract_name_from_resume(text)
+            resume_text = clean_fulltext_format(text)
+            skills_list = [
+                "Python", "Data Analysis", "Machine Learning",
+                "Communication", "Project Management",
+                "Deep Learning", "MySQL", "Tableau"
+            ]
+            extracted_skills = extract_skills_from_resume(text, skills_list)
 
+            
+            extracted_education = extract_education_from_resume(text)
+            selected_section = request.form.get("section")
+            section = request.form.get("section")
+
+            certifications = extract_certifications_from_resume(text)
+            projects = extract_projects_section(text)
+            
     return render_template(
-        "index.html",
-        name=name,
-        resume_text=resume_text,
-        skills_section=skills_section,
-        extracted_education=extracted_education,
-        selected_section=selected_section,
-        section=section,
-        certifications=certifications,
-        projects=projects,
-        overall_accuracy=overall_accuracy,
-        text_confidence=confidence_scores["text_confidence"],
-        skills_confidence=confidence_scores["skills_confidence"],
-        education_confidence=confidence_scores["education_confidence"],
-        certifications_confidence=confidence_scores["certifications_confidence"],
-        projects_confidence=confidence_scores["projects_confidence"],
-        languages_section=languages_section,
-        interests_section=interests_section,
-        achievements_section=achievements_section,
-        publications_section=publications_section,
-        volunteer_section=volunteer_section,
-        summary_section=summary_section,
-    )
+    "index.html",
+    name=name,
+    resume_text=resume_text,
+    extracted_skills=extracted_skills,
+    extracted_education=extracted_education,
+    selected_section=selected_section,
+    section=section,
+    certifications=certifications,
+    projects=projects
+)
+
+
 
 
 @app.route("/extract", methods=["POST"])
@@ -390,17 +328,25 @@ def extract_ajax():
     if not file or not section:
         return jsonify({"result": "Invalid input"}), 400
 
-    try:
+try:
         file_path = os.path.join(UPLOAD_FOLDER, file.filename)
         file.save(file_path)
 
-        text, text_confidence = extract_text_from_pdf(file_path)
-        
-        result_data = {"result": "", "confidence": 0.0}
+    text = extract_text(file_path)
 
-        if section == "name":
-            result, conf = extract_name_with_filename_fallback(text, file.filename if file else "")
-            result_data = {"result": result, "confidence": conf}
+    if section == "skills":
+        skills_list = [
+            "Python", "Data Analysis", "Machine Learning",
+            "Communication", "Project Management",
+            "Deep Learning", "MySQL", "Tableau"
+        ]
+        result = extract_skills_from_resume(text, skills_list)
+
+    elif section == "education":
+        result = extract_education_from_resume(text)
+
+    elif section == "name":
+        result = extract_name_from_resume(text)
 
         elif section == "fulltext":
             result = clean_fulltext_format(text)
@@ -458,11 +404,25 @@ def api_parse_resume():
         }), 500
 
     try:
-        if section == "name":
-            
-            result, conf = extract_name_with_filename_fallback(text, file.filename if file else "")
-            result_data = result
-            section_confidence = conf
+        if section == "skills":
+            skills_list = [
+                "Python", "Data Analysis", "Machine Learning",
+                "Communication", "Project Management",
+                "Deep Learning", "MySQL", "Tableau"
+            ]
+            result = extract_skills_from_resume(text, skills_list)
+
+        elif section == "education":
+            result = extract_education_from_resume(text)
+
+        elif section == "projects":
+            result = extract_projects_section(text)
+
+        elif section == "certifications":
+            result = extract_certifications_from_resume(text)
+
+        elif section == "name":
+            result = extract_name_from_resume(text)
 
         elif section == "fulltext":
             result_data = clean_fulltext_format(text)
