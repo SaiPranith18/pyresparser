@@ -22,8 +22,8 @@ INDIAN_FIRST_NAMES = {
     "divyansh", "ekal", "ekta", "elango", "gopal", "gurudev", "hriday", "ishan", "jayanth", 
     "kalyan", "kannan", "karthick", "katir", "keshav", "krithick", "madhav", "manav", "mandar", 
     "mangal", "manoja", "meena", "mohit", "nand", "nandini", "neel", "nikhil", "nilesh", "nithin", 
-    "padma", "paras", "prakash", "pranav", "prashanth", "prathap", "priya", "priyan", "raginee","rajesh" 
-    "rajagopal", "ram", "rama", "ramana", "ramesh", "ranganathan", "rathna", "ridhwan", "rithvik", 
+    "padma", "paras", "prakash", "pranav", "prashanth", "prathap", "priya", "priyan", "raginee",
+    "rajagopal", "ram", "rama", "ramana", "ranganathan", "rathna", "ridhwan", "rithvik",
     "sankar", "saravana", "selva", "senthil", "sethu", "shankar", "sharath", "sheik", 
     "siddhivinayak", "siva", "sivaji", "sriram", "srinivasan", "subramani", "sudarshan", "sundar", 
     "suri", "thirumalai", "thirunavukkarasu", "uma", "vairam", "vasan", "veera", "vel", "venkat", 

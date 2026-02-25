@@ -9,6 +9,8 @@ from src.models.skills import extract_skills_from_resume
 from src.models.certifications import extract_certifications_from_resume
 from src.models.projects import extract_projects_section
 from src.models.experience import extract_experience_from_resume
+from src.models.awards import extract_awards_from_resume
+from src.models.references import extract_references_from_resume
 
 
 try:
@@ -418,6 +420,16 @@ def extract_section_from_resume(text, section_type, pdf_path=None):
         
         if pdf_path and confidence < LAYOUTLM_CONFIDENCE_THRESHOLD:
             result, confidence, _ = enhance_with_layoutlm(pdf_path, section_type, result, confidence)
+        return result, confidence
+    
+    if section_type == "awards":
+        from src.models.awards import extract_awards_from_resume
+        result, confidence = extract_awards_from_resume(text)
+        return result, confidence
+    
+    if section_type == "references":
+        from src.models.references import extract_references_from_resume
+        result, confidence = extract_references_from_resume(text)
         return result, confidence
     
     

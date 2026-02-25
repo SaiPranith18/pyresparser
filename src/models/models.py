@@ -237,7 +237,7 @@ def search_resumes(query: str) -> List[Resume]:
 
 
 if __name__ == "__main__":
-    # Test database operations
+
     from flask import Flask
     
     app = Flask(__name__)
@@ -246,14 +246,14 @@ if __name__ == "__main__":
     
     init_database(app)
     
-    # Test data
+  
     test_data = {
         "name": {"raw_text": "John Doe", "confidence": 0.9},
         "email": {"raw_text": "john@example.com", "confidence": 0.95},
         "skills": {"raw_text": "Python, JavaScript", "confidence": 0.85}
     }
     
-    # Create test resume
+  
     resume = save_resume(
         filename="test_resume.pdf",
         structured_data=test_data,
@@ -262,15 +262,12 @@ if __name__ == "__main__":
     )
     
     print(f"Created resume: {resume.id}")
-    
-    # Retrieve
+
     retrieved = get_resume(resume.id)
     print(f"Retrieved: {retrieved.filename}")
-    
-    # Get all
+
     all_resumes = get_all_resumes()
     print(f"Total resumes: {len(all_resumes)}")
-    
-    # Delete
+
     delete_resume(resume.id)
     print("Deleted test resume")

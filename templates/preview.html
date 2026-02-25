@@ -5,37 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resume Preview - {{ resume.filename }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
-    <style>
-        .preview-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .resume-layout-preview {
-            border: 1px solid #ccc;
-            padding: 20px;
-            background: white;
-            min-height: 800px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .section-card {
-            transition: transform 0.2s;
-        }
-        .section-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        .confidence-badge {
-            font-size: 11px;
-        }
-    </style>
 </head>
 <body>
     <div class="container mt-4">
         <div class="preview-container">
             <h1 class="mb-4">Resume Preview</h1>
-            
-            <!-- Resume Info -->
+         
             <div class="card mb-4">
                 <div class="card-body">
                     <h5 class="card-title">{{ resume.filename }}</h5>
@@ -45,8 +20,7 @@
                     <a href="/" class="btn btn-primary">Upload New Resume</a>
                 </div>
             </div>
-            
-            <!-- Tabs -->
+        
             <ul class="nav nav-tabs" id="resumeTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="preview-tab" data-bs-toggle="tab" data-bs-target="#preview" type="button" role="tab">
@@ -60,9 +34,9 @@
                 </li>
             </ul>
             
-            <!-- Tab Content -->
+      
             <div class="tab-content mt-3">
-                <!-- PDF Preview Tab -->
+         
                 <div class="tab-pane fade show active" id="preview" role="tabpanel">
                     {% if resume.layout_html %}
                     <div class="resume-layout-preview">
@@ -73,7 +47,7 @@
                     {% endif %}
                 </div>
                 
-                <!-- Extracted Fields Tab - Dynamic Grid -->
+                
                 <div class="tab-pane fade" id="fields" role="tabpanel">
                     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-3">
                         {% for section, data in resume.structured_data.items() %}

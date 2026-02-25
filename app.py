@@ -2,7 +2,10 @@ import os
 import re
 import pdfminer
 import logging
-from typing import Dict, Any, Tuple, Optional
+from typing import Dict, Any, Tuple, Optional, List
+
+from pdfminer.high_level import extract_pages
+from pdfminer.layout import LTTextContainer
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 
@@ -118,6 +121,21 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 
+def cleanup_orphaned_entries():
+    try:
+        resumes = get_all_resumes()
+        cleaned = 0
+        for resume in resumes:
+            if resume.original_pdf_path and not os.path.exists(resume.original_pdf_path):
+                logger.info(f"Cleaning up orphaned database entry: {resume.filename} (file not found)")
+                delete_resume(resume.id)
+                cleaned += 1
+        if cleaned > 0:
+            logger.info(f"Cleaned up {cleaned} orphaned database entries")
+    except Exception as e:
+        logger.error(f"Error during cleanup: {e}")
+
+
 
 confidence_scores = {
     "text_confidence": 0.0,
@@ -131,7 +149,9 @@ confidence_scores = {
     "achievements_confidence": 0.0,
     "publications_confidence": 0.0,
     "volunteer_confidence": 0.0,
-    "summary_confidence": 0.0
+    "summary_confidence": 0.0,
+    "awards_confidence": 0.0,
+    "references_confidence": 0.0
 }
 
 
@@ -143,7 +163,103 @@ def calculate_overall_accuracy() -> float:
     return round(overall, 2)
 
 
-def extract_name_with_filename_fallback(text: str, filename: str) -> Tuple[str, float]:
+
+BOLD_FONT_SIZE_THRESHOLD = 12
+
+
+def extract_text_with_font_size(pdf_path: str) -> List[Tuple[str, float]]:
+    text_elements = []
+    
+    try:
+        for page in extract_pages(pdf_path):
+            for element in page:
+                if isinstance(element, LTTextContainer):
+                    text = element.get_text().strip()
+                    if not text:
+                        continue
+                    
+                    
+                    
+                    bbox = element.bbox
+                    if bbox:
+                        font_size = bbox[3] - bbox[1]  
+                        
+                        font_size = max(6, min(font_size * 0.8, 18))
+                        text_elements.append((text, font_size))
+                        
+    except Exception as e:
+        logger.warning(f"Error extracting text with font size: {e}")
+    
+    return text_elements
+
+
+def extract_name_from_bold_text(pdf_path: str) -> Tuple[str, float]:
+    if not pdf_path or not os.path.exists(pdf_path):
+        return "", 0.0
+    
+    try:
+        text_elements = extract_text_with_font_size(pdf_path)
+        
+        if not text_elements:
+            logger.info("No text elements found with font size information")
+            return "", 0.0
+        
+        
+        bold_elements = [(text, fs) for text, fs in text_elements if fs >= BOLD_FONT_SIZE_THRESHOLD]
+        
+        if not bold_elements:
+            logger.info("No bold text found in the document")
+            return "", 0.0
+        
+        
+        
+        
+        first_five_bold_lines = bold_elements[:5]
+        
+        for text, font_size in first_five_bold_lines:
+            
+            text = text.strip()
+            
+            
+            if len(text) < 2 or len(text) > 50:
+                continue
+            
+            
+            if re.search(r'[\w\.-]+@[\w\.-]+', text):
+                continue
+            if re.search(r'\d{10,}', text):
+                continue
+            if re.search(r'\d{4}\s*(to|-)\s*\d{4}', text, re.IGNORECASE):
+                continue
+            
+            
+            words = text.split()
+            if 2 <= len(words) <= 4:
+                
+                capitalized_count = sum(1 for w in words if w and len(w) > 0 and w[0].isupper())
+                if capitalized_count >= len(words) * 0.7:
+                    
+                    candidate_name = text.title()
+                    
+                    
+                    from src.models.name import has_name_awareness
+                    is_valid, awareness_score = has_name_awareness(candidate_name)
+                    
+                    if is_valid:
+                        confidence = min(0.5 + awareness_score * 0.3, 0.85)
+                        logger.info(f"Name extracted from bold text: {candidate_name} (confidence: {confidence}, font_size: {font_size})")
+                        return candidate_name, round(confidence, 2)
+        
+        logger.info("No valid name found in first 5 bold lines")
+        return "", 0.0
+        
+    except Exception as e:
+        logger.warning(f"Error extracting name from bold text: {e}")
+        return "", 0.0
+
+
+def extract_name_with_filename_fallback(text: str, filename: str, pdf_path: Optional[str] = None) -> Tuple[str, float]:
+    
     
     try:
         extracted_name, confidence = extract_name_from_resume(text)
@@ -154,6 +270,16 @@ def extract_name_with_filename_fallback(text: str, filename: str) -> Tuple[str, 
             return extracted_name, confidence
     except Exception as e:
         logger.warning(f"Error extracting name from text: {e}")
+    
+    
+    if pdf_path and os.path.exists(pdf_path):
+        try:
+            bold_name, bold_confidence = extract_name_from_bold_text(pdf_path)
+            if bold_name and bold_confidence > 0:
+                logger.info(f"Name extracted from bold text (extra method): {bold_name} (confidence: {bold_confidence})")
+                return bold_name, bold_confidence
+        except Exception as e:
+            logger.warning(f"Error extracting name from bold text: {e}")
     
     
     if filename:
@@ -189,7 +315,7 @@ def extract_all_sections(text: str, pdf_path: Optional[str] = None, filename: st
     
     try:
         
-        name, conf = extract_name_with_filename_fallback(text, filename)
+        name, conf = extract_name_with_filename_fallback(text, filename, pdf_path)
         results["name"] = (name, conf)
         confidence_scores["name_confidence"] = conf
     except Exception as e:
@@ -237,6 +363,24 @@ def extract_all_sections(text: str, pdf_path: Optional[str] = None, filename: st
         results["certifications"] = ("", 0.0)
     
     
+    try:
+        awards, conf = extract_section_from_resume(text, "awards", pdf_path)
+        results["awards"] = (awards, conf)
+        confidence_scores["awards_confidence"] = conf
+    except Exception as e:
+        logger.error(f"Error extracting awards: {e}")
+        results["awards"] = ("", 0.0)
+    
+    
+    try:
+        references, conf = extract_section_from_resume(text, "references", pdf_path)
+        results["references"] = (references, conf)
+        confidence_scores["references_confidence"] = conf
+    except Exception as e:
+        logger.error(f"Error extracting references: {e}")
+        results["references"] = ("", 0.0)
+    
+    
     if NEW_SECTIONS_AVAILABLE:
         new_sections = [
             ("languages", extract_languages_from_resume),
@@ -274,6 +418,10 @@ def home():
     overall_accuracy = 0.0
     
     
+    saved_resume_id = None
+    saved_filename = None
+    save_success = False
+    
     languages_section = None
     interests_section = None
     achievements_section = None
@@ -299,7 +447,7 @@ def home():
                 
                 
                 original_filename = file.filename if file else ""
-                name, name_confidence = extract_name_with_filename_fallback(text, original_filename)
+                name, name_confidence = extract_name_with_filename_fallback(text, original_filename, file_path)
                 confidence_scores["name_confidence"] = name_confidence
                 
                 
@@ -318,6 +466,11 @@ def home():
                 )
                 confidence_scores["education_confidence"] = education_confidence
                 
+                experience_section, experience_confidence = extract_section_from_resume(
+                    text, "experience", pdf_path_for_layoutlm
+                )
+                confidence_scores["experience_confidence"] = experience_confidence
+                
                 certifications, cert_confidence = extract_section_from_resume(
                     text, "certifications", pdf_path_for_layoutlm
                 )
@@ -327,6 +480,23 @@ def home():
                     text, "projects", pdf_path_for_layoutlm
                 )
                 confidence_scores["projects_confidence"] = projects_confidence
+                
+                
+                awards_section = ""
+                awards_confidence = 0.0
+                try:
+                    awards_section, awards_confidence = extract_section_from_resume(text, "awards", pdf_path_for_layoutlm)
+                    confidence_scores["awards_confidence"] = awards_confidence
+                except Exception as e:
+                    logger.error(f"Error extracting awards: {e}")
+                
+                references_section = ""
+                references_confidence = 0.0
+                try:
+                    references_section, references_confidence = extract_section_from_resume(text, "references", pdf_path_for_layoutlm)
+                    confidence_scores["references_confidence"] = references_confidence
+                except Exception as e:
+                    logger.error(f"Error extracting references: {e}")
                 
                 
                 if NEW_SECTIONS_AVAILABLE:
@@ -352,6 +522,56 @@ def home():
                 section = request.form.get("section")
                 
                 overall_accuracy = calculate_overall_accuracy()
+                
+                
+                try:
+                    
+                    structured_data = {
+                        "name": {"raw_text": name, "confidence": name_confidence},
+                        "skills": {"raw_text": skills_section, "confidence": skills_confidence},
+                        "education": {"raw_text": extracted_education, "confidence": education_confidence},
+                        "experience": {"raw_text": experience_section, "confidence": experience_confidence},
+                        "projects": {"raw_text": projects, "confidence": projects_confidence},
+                        "certifications": {"raw_text": certifications, "confidence": cert_confidence},
+                        "awards": {"raw_text": awards_section, "confidence": awards_confidence},
+                        "references": {"raw_text": references_section, "confidence": references_confidence},
+                    }
+                    
+                    
+                    if NEW_SECTIONS_AVAILABLE:
+                        structured_data["languages"] = {"raw_text": languages_section, "confidence": languages_conf}
+                        structured_data["interests"] = {"raw_text": interests_section, "confidence": interests_conf}
+                        structured_data["achievements"] = {"raw_text": achievements_section, "confidence": achievements_conf}
+                        structured_data["publications"] = {"raw_text": publications_section, "confidence": publications_conf}
+                        structured_data["volunteer"] = {"raw_text": volunteer_section, "confidence": volunteer_conf}
+                        structured_data["summary"] = {"raw_text": summary_section, "confidence": summary_conf}
+                    
+                    
+                    layout_html = ""
+                    if PDF_LAYOUT_EXTRACTOR_AVAILABLE:
+                        try:
+                            layout_result = extract_full_resume_html(file_path)
+                            layout_html = layout_result.html_output
+                        except Exception as e:
+                            logger.warning(f"Could not extract layout HTML: {e}")
+                    
+                    
+                    resume = save_resume(
+                        filename=original_filename,
+                        structured_data=structured_data,
+                        extracted_text=text,
+                        layout_html=layout_html,
+                        original_pdf_path=file_path
+                    )
+                    
+                    saved_resume_id = resume.id
+                    saved_filename = resume.filename
+                    save_success = True
+                    logger.info(f"Resume saved to database: ID {resume.id}, Filename: {resume.filename}")
+                    
+                except Exception as e:
+                    logger.error(f"Error saving resume to database: {e}")
+                    save_success = False
                 
             except Exception as e:
                 logger.error(f"Error processing resume: {e}")
@@ -379,6 +599,9 @@ def home():
         publications_section=publications_section,
         volunteer_section=volunteer_section,
         summary_section=summary_section,
+        saved_resume_id=saved_resume_id,
+        saved_filename=saved_filename,
+        save_success=save_success,
     )
 
 
@@ -399,7 +622,7 @@ def extract_ajax():
         result_data = {"result": "", "confidence": 0.0}
 
         if section == "name":
-            result, conf = extract_name_with_filename_fallback(text, file.filename if file else "")
+            result, conf = extract_name_with_filename_fallback(text, file.filename if file else "", file_path)
             result_data = {"result": result, "confidence": conf}
 
         elif section == "fulltext":
@@ -428,11 +651,96 @@ def extract_ajax():
         overall_accuracy = calculate_overall_accuracy()
         result_data["overall_accuracy"] = overall_accuracy
         
+        
+        
+        
         return jsonify(result_data)
     
     except Exception as e:
         logger.error(f"Error in extract_ajax: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/detect-headings", methods=["POST"])
+def detect_headings_api():
+    file = request.files.get("resume")
+
+    if not file or not file.filename:
+        return jsonify({
+            "status": "error",
+            "message": "Resume file is required"
+        }), 400
+
+    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(file_path)
+
+    try:
+        text, text_confidence = extract_text_from_pdf(file_path)
+        
+        if not text or len(text.strip()) < 10:
+            return jsonify({
+                "status": "error",
+                "message": "Could not extract text from the resume"
+            }), 400
+        
+        headings, headings_confidence = detect_headings(text)
+        heading_texts = [heading[1] for heading in headings]
+        
+        
+        try:
+            all_sections = extract_all_sections(text, file_path, file.filename)
+            
+            structured_data = {}
+            if STRUCTURED_OUTPUT_AVAILABLE:
+                all_sections["text"] = (text, text_confidence)
+                structured_data = generate_structured_resume(text, all_sections)
+            else:
+                for section_name, (data, confidence) in all_sections.items():
+                    structured_data[section_name] = {
+                        "raw_text": data,
+                        "confidence": confidence
+                    }
+            
+            layout_html = ""
+            if PDF_LAYOUT_EXTRACTOR_AVAILABLE:
+                try:
+                    layout_result = extract_full_resume_html(file_path)
+                    layout_html = layout_result.html_output
+                except Exception as e:
+                    logger.warning(f"Could not extract layout HTML: {e}")
+            
+            resume = save_resume(
+                filename=file.filename,
+                structured_data=structured_data,
+                extracted_text=text,
+                layout_html=layout_html,
+                original_pdf_path=file_path
+            )
+            logger.info(f"Resume saved to database: ID {resume.id}, Filename: {resume.filename}")
+            
+            return jsonify({
+                "status": "success",
+                "headings": heading_texts,
+                "headings_confidence": headings_confidence,
+                "text_confidence": text_confidence,
+                "saved_resume_id": resume.id
+            })
+        except Exception as e:
+            logger.error(f"Error saving resume to database: {e}")
+            
+            return jsonify({
+                "status": "success",
+                "headings": heading_texts,
+                "headings_confidence": headings_confidence,
+                "text_confidence": text_confidence
+            })
+
+    except Exception as e:
+        logger.error(f"Error detecting headings: {e}")
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
 
 @app.route("/api/parse", methods=["POST", "GET", "DELETE"])
@@ -460,7 +768,7 @@ def api_parse_resume():
     try:
         if section == "name":
             
-            result, conf = extract_name_with_filename_fallback(text, file.filename if file else "")
+            result, conf = extract_name_with_filename_fallback(text, file.filename if file else "", file_path)
             result_data = result
             section_confidence = conf
 
@@ -591,44 +899,7 @@ def api_parse_all():
         }), 500
 
 
-@app.route("/detect-headings", methods=["POST"])
-def detect_headings_api():
-    file = request.files.get("resume")
 
-    if not file or not file.filename:
-        return jsonify({
-            "status": "error",
-            "message": "Resume file is required"
-        }), 400
-
-    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
-    file.save(file_path)
-
-    try:
-        text, text_confidence = extract_text_from_pdf(file_path)
-        
-        if not text or len(text.strip()) < 10:
-            return jsonify({
-                "status": "error",
-                "message": "Could not extract text from the resume"
-            }), 400
-        
-        headings, headings_confidence = detect_headings(text)
-        heading_texts = [heading[1] for heading in headings]
-        
-        return jsonify({
-            "status": "success",
-            "headings": heading_texts,
-            "headings_confidence": headings_confidence,
-            "text_confidence": text_confidence
-        })
-
-    except Exception as e:
-        logger.error(f"Error detecting headings: {e}")
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
 
 
 @app.route("/extract-layoutlm", methods=["POST"])
@@ -894,6 +1165,41 @@ def server_error(e):
     return jsonify({"status": "error", "message": "Internal server error"}), 500
 
 
+@app.route("/api/delete-file/<filename>", methods=["DELETE"])
+def api_delete_file(filename):
+    try:
+        
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            logger.info(f"File deleted from uploads: {filename}")
+        
+        
+        resumes = get_all_resumes()
+        deleted = False
+        for resume in resumes:
+            if resume.filename == filename:
+                delete_resume(resume.id)
+                logger.info(f"Database entry deleted for: {filename}")
+                deleted = True
+                break
+        
+        if deleted:
+            return jsonify({
+                "status": "success",
+                "message": f"File '{filename}' deleted from uploads and database"
+            })
+        else:
+            return jsonify({
+                "status": "error",
+                "message": "File not found in database"
+            }), 404
+            
+    except Exception as e:
+        logger.error(f"Error deleting file: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 if __name__ == "__main__":
     logger.info("Starting Enhanced Resume Parser")
     logger.info(f"LayoutLM Available: {LAYOUTLM_AVAILABLE}")
@@ -902,5 +1208,9 @@ if __name__ == "__main__":
     logger.info(f"Performance Features Available: {PERFORMANCE_AVAILABLE}")
     logger.info(f"Transformers Available: {TRANSFORMERS_AVAILABLE}")
     logger.info(f"PDF Layout Extractor Available: {PDF_LAYOUT_EXTRACTOR_AVAILABLE}")
+    
+    
+    with app.app_context():
+        cleanup_orphaned_entries()
     
     app.run(host="127.0.0.1", port=8000, debug=True)

@@ -49,41 +49,46 @@
         {% if overall_accuracy %}
         <div class="accuracy-details alert alert-info mt-2">
             <strong>Extraction Confidence Scores:</strong>
+
             <div class="row mt-2">
                 <div class="col-md-4">
-                    <small>Text Extraction: {{ (text_confidence * 100)|round(1) }}%</small>
+                    <small>Text Extraction: <span id="textConfidenceValue">0%</span></small>
                     <div class="progress" style="height: 8px;">
-                        <div class="progress-bar" role="progressbar" style="width: {{ text_confidence * 100 }}%;"></div>
+                        <div class="progress-bar" id="textConfidenceBar" role="progressbar" style="width: 0%;"></div>
                     </div>
                 </div>
+
                 <div class="col-md-4">
-                    <small>Skills: {{ (skills_confidence * 100)|round(1) }}%</small>
+                    <small>Skills: <span id="skillsConfidenceValue">0%</span></small>
                     <div class="progress" style="height: 8px;">
-                        <div class="progress-bar bg-success" role="progressbar"
-                            style="width: {{ skills_confidence * 100 }}%;"></div>
+                        <div class="progress-bar bg-success" id="skillsConfidenceBar" role="progressbar"
+                            style="width: 0%;"></div>
                     </div>
                 </div>
+
                 <div class="col-md-4">
-                    <small>Education: {{ (education_confidence * 100)|round(1) }}%</small>
+                    <small>Education: <span id="educationConfidenceValue">0%</span></small>
                     <div class="progress" style="height: 8px;">
-                        <div class="progress-bar bg-info" role="progressbar"
-                            style="width: {{ education_confidence * 100 }}%;"></div>
+                        <div class="progress-bar bg-info" id="educationConfidenceBar" role="progressbar"
+                            style="width: 0%;"></div>
                     </div>
                 </div>
             </div>
+
             <div class="row mt-2">
                 <div class="col-md-4">
-                    <small>Certifications: {{ (certifications_confidence * 100)|round(1) }}%</small>
+                    <small>Certifications: <span id="certificationsConfidenceValue">0%</span></small>
                     <div class="progress" style="height: 8px;">
-                        <div class="progress-bar bg-warning" role="progressbar"
-                            style="width: {{ certifications_confidence * 100 }}%;"></div>
+                        <div class="progress-bar bg-warning" id="certificationsConfidenceBar" role="progressbar"
+                            style="width: 0%;"></div>
                     </div>
                 </div>
+
                 <div class="col-md-4">
-                    <small>Projects: {{ (projects_confidence * 100)|round(1) }}%</small>
+                    <small>Projects: <span id="projectsConfidenceValue">0%</span></small>
                     <div class="progress" style="height: 8px;">
-                        <div class="progress-bar bg-danger" role="progressbar"
-                            style="width: {{ projects_confidence * 100 }}%;"></div>
+                        <div class="progress-bar bg-danger" id="projectsConfidenceBar" role="progressbar"
+                            style="width: 0%;"></div>
                     </div>
                 </div>
             </div>
@@ -108,11 +113,11 @@
 
 
                 <div id="resultBox" style="margin-top:20px; border: 1px solid black;"></div>
-                
+
 
         </form>
         <script>
-        
+
             const defaultSections = [
                 { value: "name", label: "Name" },
                 { value: "summary", label: "Summary" },
@@ -268,7 +273,7 @@
 
                                 const option = document.createElement("option");
                                 option.value = sectionType;
- 
+
                                 option.textContent = sectionType.charAt(0).toUpperCase() + sectionType.slice(1).replace(/-/g, ' ');
                                 option.classList.add("detected-option");
                                 sectionSelect.appendChild(option);
@@ -294,7 +299,7 @@
 
                             detectedSections.innerHTML = `<span class="detected-badge">${data.headings.length} sections detected</span>`;
                         } else {
-                      
+
                             populateDefaultOptions();
                             detectedSections.innerHTML = '<span class="detected-badge" style="background-color: #ffc107;">Using standard sections</span>';
                         }
@@ -345,7 +350,7 @@
                             document.getElementById("loadingResult")?.remove();
 
                             if (data.status === "success" && data.html_output) {
-                      
+
                                 resultBox.innerHTML = `
                                     <div class="confidence-badge mb-2">
                                         <span class="badge bg-success">
@@ -464,6 +469,5 @@
         </script>
 
 </body>
-</head>
 
 </html>

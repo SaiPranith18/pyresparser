@@ -38,16 +38,34 @@ def get_section_mapping():
 SECTION_HEADINGS = list(get_section_mapping().values())
 
 MAIN_SECTION_HEADINGS = [
-    'name', 'summary', 'objective', 'profile', 'about', 'introduction',
-    'skills', 'technical skills', 'core skills', 'key skills', 'competencies',
-    'education', 'academic', 'qualification', 'degree',
+    'name', 'summary', 'career objective','objective', 'profile', 'about', 'introduction',
+    "skills","technical skills","key skills","core skills","skill set",
+    "skills summary","technical expertise","technical competencies","technical proficiencies",
+    "technical knowledge","tools & technologies","tools and technologies","technologies",
+    "software skills","programming skills","technology stack","tech stack",
+    "core competencies","competencies","professional skills","areas of expertise",
+    "strengths","skills & abilities","skills and abilities","computer skills","it skills",
+    'education','education qualification','educational qualifications','academic qualifications',
+    'education & qualifications','education details','education background','academic background','educational profile','educational summary',
+    'academic credentials','education and training',
+    'academic', 'qualification', 'degree',
     'experience', 'employment', 'work history', 'professional experience',
     'projects', 'project work',
-    'certifications', 'certificates', 'licenses', 'credentials',
-    'awards', 'honors', 'achievements', 'recognitions',
+    "certifications","certification","certificates","professional certifications",
+    "technical certifications","certifications & training","training & certifications","licenses & certifications",
+    "credentials","professional credentials","certifications & courses","courses & certifications",
+    "online certifications","professional development","technical training","workshops & certifications",
+    "industry certifications",
+    "awards", "achievements", "honors", "recognition", "accomplishments",
+    "awards & achievements", "awards and achievements", "honors & awards",
+    "achievements & awards", "awards received", "awards earned",
+    "honors and awards", "professional awards", "academic honors",
+    "awards and recognitions", "certifications and awards",
     'languages', 'language skills',
     'interests', 'hobbies',
-    'references', 'referees',
+    "references", "referees", "recommendations", "professional references",
+    "personal references", "character references", "reference available",
+    "references furnished", "references upon request",
     'publications', 'papers', 'research',
     'volunteer', 'community', 'social work',
     'training', 'workshops', 'seminars', 'courses',
@@ -265,25 +283,42 @@ def normalize_heading(heading_text):
     
     if any(kw in heading_lower for kw in ['name', 'personal', 'contact', 'profile']):
         return 'name'
-    elif any(kw in heading_lower for kw in ['summary', 'objective', 'about', 'introduction', 'profile']):
+    elif any(kw in heading_lower for kw in ['summary', 'career objective','objective', 'about', 'introduction', 'profile']):
         return 'summary'
-    elif any(kw in heading_lower for kw in ['skill', 'technical', 'technology', 'competenc','soft']):
+    elif any(kw in heading_lower for kw in ["skills","technical skills","key skills","core skills","skill set",
+                     "skills summary","technical expertise","technical competencies","technical proficiencies",
+                    "technical knowledge","tools & technologies","tools and technologies","technologies",
+                    "software skills","programming skills","technology stack","tech stack",
+                    "core competencies","competencies","professional skills","areas of expertise",
+                    "strengths","skills & abilities","skills and abilities","computer skills","it skills"]):
         return 'skills'
-    elif any(kw in heading_lower for kw in ['education', 'academic', 'degree', 'qualification', 'college', 'university']):
+    elif any(kw in heading_lower for kw in ['education','education qualification','educational qualifications','academic qualifications',
+                                    'education & qualifications','education details','education background','academic background','educational profile','educational summary',
+                                     'academic credentials','education and training']):
         return 'education'
     elif any(kw in heading_lower for kw in ['experience', 'work', 'employment', 'job', 'career', 'internship']):
         return 'experience'
     elif any(kw in heading_lower for kw in ['project']):
         return 'projects'
-    elif any(kw in heading_lower for kw in ['certification', 'certificate', 'license', 'credential']):
+    elif any(kw in heading_lower for kw in ["certifications","certification","certificates","professional certifications",
+                        "technical certifications","certifications & training","training & certifications","licenses & certifications",
+                        "credentials","professional credentials","certifications & courses","courses & certifications",
+                        "online certifications","professional development","technical training","workshops & certifications",
+                        "industry certifications"]):
         return 'certifications'
-    elif any(kw in heading_lower for kw in ['award', 'honor', 'achievement', 'recognition']):
+    elif any(kw in heading_lower for kw in ["awards", "achievements", "honors", "recognition", "accomplishments",
+    "awards & achievements", "awards and achievements", "honors & awards",
+    "achievements & awards", "awards received", "awards earned",
+    "honors and awards", "professional awards", "academic honors",
+    "awards and recognitions", "certifications and awards"]):
         return 'awards'
     elif any(kw in heading_lower for kw in ['language']):
         return 'languages'
     elif any(kw in heading_lower for kw in ['interest', 'hobby', 'activity']):
         return 'interests'
-    elif any(kw in heading_lower for kw in ['reference']):
+    elif any(kw in heading_lower for kw in ["references", "referees", "recommendations", "professional references",
+    "personal references", "character references", "reference available",
+    "references furnished", "references upon request"]):
         return 'references'
     elif any(kw in heading_lower for kw in ['publication', 'paper', 'research', 'journal', 'book']):
         return 'publications'
@@ -299,7 +334,7 @@ def normalize_heading(heading_text):
         return 'affiliations'
     elif any(kw in heading_lower for kw in ['service']):
         return 'service'
-    elif any(kw in heading_lower for kw in ['strength', 'competency', 'attribute']):
+    elif any(kw in heading_lower for kw in ['strength','strengths', 'competency', 'attribute']):
         return 'strengths'
     elif any(kw in heading_lower for kw in ['declaration', 'statement', 'legal']):
         return 'declaration'

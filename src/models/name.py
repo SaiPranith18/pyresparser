@@ -15,7 +15,23 @@ from src.utils.name_database import (
 )
 
 
+NAME_TITLE_PREFIXES = [
+    r'^(?:Dr\.?|Prof\.?|Mr\.?|Mrs\.?|Ms\.?|Miss|Master|Sir|Madam|Lord|Lady)\s+',
+    r'^(?:Er\.?|Er\s+)',
+    r'^(?:C\.?A\.?|CA)\s+',
+    r'^(?:M\.?Tech\.?|B\.?Tech\.?|Ph\.?D\.?|M\.?Sc\.?|B\.?Sc\.?)\s+',
+]
 
+NAME_SUFFIXES = [
+    r'(?:Jr\.?|Sr\.?|II|III|IV|V)$',
+    r'(?:\s+(?:Jr|Sr|II|III|IV|V))$',
+]
+
+COMPOUND_NAME_PATTERNS = [
+    r'^[A-Z][a-z]+(?:-[A-Z][a-z]+)+$',
+    r'^[A-Z][a-z]+(?:\s+[A-Z]\.?\s*)+[A-Z][a-z]+$',
+    r"^[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\s+[A-Z][a-z]+$",
+]
 
 
 try:
