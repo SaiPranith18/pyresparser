@@ -94,6 +94,43 @@ except ImportError:
     extract_layout_json = None
     extract_layout_html = None
 
+try:
+    from src.utils.continuous_learning import get_continuous_learning
+    CONTINUOUS_LEARNING_AVAILABLE = True
+except ImportError:
+    CONTINUOUS_LEARNING_AVAILABLE = False
+    get_continuous_learning = None
+
+try:
+    from src.extractors.handwriting_extractor import is_handwriting_available
+    HANDWRITING_OCR_AVAILABLE = is_handwriting_available()
+except ImportError:
+    HANDWRITING_OCR_AVAILABLE = False
+    is_handwriting_available = None
+
+try:
+    from src.training.trainer import get_model_trainer
+    MODEL_TRAINING_AVAILABLE = True
+except ImportError:
+    MODEL_TRAINING_AVAILABLE = False
+    get_model_trainer = None
+
+try:
+    from src.training.data_preparator import get_data_preparator
+    TRAINING_DATA_PREPARATOR_AVAILABLE = True
+except ImportError:
+    TRAINING_DATA_PREPARATOR_AVAILABLE = False
+    get_data_preparator = None
+
+
+try:
+    from src.utils.api_routes import register_routes
+    register_routes(app)
+    FEATURE_API_ROUTES_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Could not register feature API routes: {e}")
+    FEATURE_API_ROUTES_AVAILABLE = False
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -258,8 +295,55 @@ def extract_name_from_bold_text(pdf_path: str) -> Tuple[str, float]:
         return "", 0.0
 
 
+def get_feedback_corrections(field_name: str) -> Dict[str, str]:
+    """Get approved corrections from feedback for a specific field.
+    
+    This function now uses permanent correction storage, so corrections
+    persist even if feedback files are deleted.
+    """
+    corrections = {}
+    try:
+        # First, try to get corrections from permanent storage
+        from src.utils.correction_storage import get_correction_storage
+        
+        storage = get_correction_storage()
+        corrections = storage.get_corrections_dict(field_name)
+        
+        if corrections:
+            logger.info(f"Found {len(corrections)} permanent corrections for field '{field_name}'")
+        
+        # Also check for any pending corrections from learning system (for backwards compatibility)
+        from src.utils.continuous_learning import get_continuous_learning
+        
+        learning = get_continuous_learning()
+        pending = learning.get_pending_corrections()
+        
+        for correction in pending:
+            if correction.get('field_name') == field_name:
+                original = correction.get('original_value', '')
+                corrected = correction.get('corrected_value', '')
+                if original and corrected and original.lower() not in corrections:
+                    corrections[original.lower()] = corrected
+                    
+    except Exception as e:
+        logger.warning(f"Error getting feedback corrections: {e}")
+    
+    return corrections
+
+
 def extract_name_with_filename_fallback(text: str, filename: str, pdf_path: Optional[str] = None) -> Tuple[str, float]:
     
+    # Check for feedback corrections first
+    corrections = get_feedback_corrections("name")
+    
+    if corrections:
+        logger.info(f"Found {len(corrections)} feedback corrections for name field")
+        # Try to find a correction match in the text
+        text_lower = text.lower()
+        for original, corrected in corrections.items():
+            if original.lower() in text_lower:
+                logger.info(f"Using feedback correction: '{original}' -> '{corrected}'")
+                return corrected, 0.95  # High confidence for user-corrected value
     
     try:
         extracted_name, confidence = extract_name_from_resume(text)
@@ -651,8 +735,14 @@ def extract_ajax():
         overall_accuracy = calculate_overall_accuracy()
         result_data["overall_accuracy"] = overall_accuracy
         
-        
-        
+        # Get the most recent resume ID for feedback submission
+        try:
+            from src.models.models import get_all_resumes
+            resumes = get_all_resumes()
+            if resumes:
+                result_data["resume_id"] = resumes[-1].id
+        except:
+            pass
         
         return jsonify(result_data)
     
@@ -907,8 +997,7 @@ def extract_layoutlm():
     file = request.files.get("resume")
 
     if not file:
-        return jsonify({
-            "status": "error",
+        return jsonify({           "status": "error",
             "message": "Resume file is required"
         }), 400
 
@@ -949,14 +1038,33 @@ def get_status():
             "structured_output": STRUCTURED_OUTPUT_AVAILABLE,
             "performance": PERFORMANCE_AVAILABLE,
             "transformers": TRANSFORMERS_AVAILABLE,
-            "pdf_layout_extractor": PDF_LAYOUT_EXTRACTOR_AVAILABLE
+            "pdf_layout_extractor": PDF_LAYOUT_EXTRACTOR_AVAILABLE,
+            "continuous_learning": CONTINUOUS_LEARNING_AVAILABLE,
+            "handwriting_ocr": HANDWRITING_OCR_AVAILABLE,
+            "model_training": MODEL_TRAINING_AVAILABLE,
+            "training_data_preparator": TRAINING_DATA_PREPARATOR_AVAILABLE,
+            "feature_api_routes": FEATURE_API_ROUTES_AVAILABLE
         },
         "supported_sections": [
             "name", "fulltext", "skills", "education", "experience",
             "projects", "certifications", "languages", "interests",
             "achievements", "publications", "volunteer", "summary",
             "structured" if STRUCTURED_OUTPUT_AVAILABLE else None
-        ]
+        ],
+        "new_features": {
+            "continuous_learning": {
+                "description": "Collect user feedback to improve extraction accuracy over time",
+                "endpoints": ["/api/feedback", "/api/learning/stats", "/api/learning/pending"]
+            },
+            "handwriting_recognition": {
+                "description": "OCR for handwritten text in resumes",
+                "endpoints": ["/api/ocr/status", "/api/ocr/extract", "/api/ocr/detect-handwriting"]
+            },
+            "custom_model_training": {
+                "description": "Train custom ML models with your own data",
+                "endpoints": ["/api/model/train", "/api/model/status", "/api/model/list", "/api/model/deploy"]
+            }
+        }
     })
 
 

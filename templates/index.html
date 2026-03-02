@@ -402,7 +402,54 @@
                                 </span>
                             </div>
                             <pre>${resultContent}</pre>
+                            <div class="mt-3 p-3 border rounded bg-light" id="correctionBox">
+                                <h6 class="mb-2"><i class="fas fa-edit"></i> Is this incorrect? Submit a correction:</h6>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="correctedValue" placeholder="Enter corrected value">
+                                    <button class="btn btn-primary" type="button" id="submitCorrection">Submit Correction</button>
+                                </div>
+                                <small class="text-muted">Original: <span class="text-danger">${resultContent.substring(0, 100)}</span></small>
+                            </div>
                         `;
+
+                        // Add click handler for correction button
+                        document.getElementById('submitCorrection').addEventListener('click', async function() {
+                            const corrected = document.getElementById('correctedValue').value;
+                            if (!corrected.trim()) {
+                                alert('Please enter a corrected value');
+                                return;
+                            }
+                            
+                            const resumeId = data.resume_id || 1;
+                            const fieldName = selectedSection;
+                            
+                            try {
+                                const response = await fetch('/api/feedback', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        resume_id: resumeId,
+                                        field_name: fieldName,
+                                        original_value: resultContent,
+                                        corrected_value: corrected,
+                                        comment: ''
+                                    })
+                                });
+                                
+                                const feedbackData = await response.json();
+                                if (feedbackData.status === 'success') {
+                                    alert('Correction submitted successfully! Thank you for helping us improve.');
+                                    document.getElementById('correctedValue').value = '';
+                                } else {
+                                    alert('Error: ' + feedbackData.message);
+                                }
+                            } catch (err) {
+                                console.error('Error submitting correction:', err);
+                                alert('Failed to submit correction. Please try again.');
+                            }
+                        });
 
                     } catch (error) {
                         console.error("Error extracting section:", error);

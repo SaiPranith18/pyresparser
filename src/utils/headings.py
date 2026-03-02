@@ -312,7 +312,7 @@ def normalize_heading(heading_text):
     "honors and awards", "professional awards", "academic honors",
     "awards and recognitions", "certifications and awards"]):
         return 'awards'
-    elif any(kw in heading_lower for kw in ['language']):
+    elif any(kw in heading_lower for kw in ['languages']):
         return 'languages'
     elif any(kw in heading_lower for kw in ['interest', 'hobby', 'activity']):
         return 'interests'
