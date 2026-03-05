@@ -18,7 +18,7 @@ INDIAN_FIRST_NAMES = {
     "subhash", "sudhir", "suman", "sunil", "suraj", "suresh", "surya", "sushant", "swapnil", "tariq", 
     "tej", "thakur", "tushar", "umesh", "utkarsh", "vijay", "vikas", "vipin", "vipul", "virat", 
     "vishal", "vishnu", "vivek", "yash", "yashwant", "yogesh", "abhishek", "aditya", "adarsh", 
-    "akshay", "aravind", "ashok", "balu", "bhrigu", "dev", "devang", "dhananjay", "dhruv", 
+    "akshay", "aravind", "ashok", "balu", "bhrigu", "dev", "devang", "dhananjay", "dhruv", "sudheer",
     "divyansh", "ekal", "ekta", "elango", "gopal", "gurudev", "hriday", "ishan", "jayanth", 
     "kalyan", "kannan", "karthick", "katir", "keshav", "krithick", "madhav", "manav", "mandar", 
     "mangal", "manoja", "meena", "mohit", "nand", "nandini", "neel", "nikhil", "nilesh", "nithin", 
@@ -212,7 +212,7 @@ NAME_PARTICLES = {
     "van", "von", "de", "la", "le", "el", "al", "bin", "ibn", "ben", "ab", "abd",
     "mc", "mac", "o", "da", "di", "du", "del", "dos", "das", "zu", "zur"
 }
-
+ 
 
 NON_NAME_PATTERNS = {
     "resume", "curriculum", "vitae", "cv", "profile", "summary", "objective", "declaration",

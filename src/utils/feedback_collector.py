@@ -8,6 +8,12 @@ from dataclasses import dataclass, field, asdict
 logger = logging.getLogger(__name__)
 
 
+def _clean_text(value: Any) -> str:
+    text = "" if value is None else str(value)
+    text = text.replace("\x00", " ")
+    return text.encode("utf-8", errors="replace").decode("utf-8", errors="replace")
+
+
 @dataclass
 class FeedbackEntry:
     resume_id: int
@@ -45,12 +51,12 @@ class FeedbackCollector:
     ) -> str:
         entry = FeedbackEntry(
             resume_id=resume_id,
-            field_name=field_name,
-            original_value=original_value,
-            corrected_value=corrected_value,
+            field_name=_clean_text(field_name),
+            original_value=_clean_text(original_value),
+            corrected_value=_clean_text(corrected_value),
             user_id=user_id,
             feedback_type="correction",
-            comment=comment,
+            comment=_clean_text(comment),
             timestamp=datetime.now(),
             processed=False
         )
@@ -66,9 +72,9 @@ class FeedbackCollector:
     ) -> str:
         entry = FeedbackEntry(
             resume_id=resume_id,
-            field_name=field_name,
-            original_value=value,
-            corrected_value=value,  
+            field_name=_clean_text(field_name),
+            original_value=_clean_text(value),
+            corrected_value=_clean_text(value),  
             user_id=user_id,
             feedback_type="confirmation",
             timestamp=datetime.now(),
@@ -87,12 +93,12 @@ class FeedbackCollector:
     ) -> str:
         entry = FeedbackEntry(
             resume_id=resume_id,
-            field_name=field_name,
-            original_value=value,
+            field_name=_clean_text(field_name),
+            original_value=_clean_text(value),
             corrected_value="",  
             user_id=user_id,
             feedback_type="rejection",
-            comment=reason,
+            comment=_clean_text(reason),
             timestamp=datetime.now(),
             processed=False
         )
@@ -105,8 +111,8 @@ class FeedbackCollector:
         
         filepath = os.path.join(self.storage_path, f"{feedback_id}.json")
         
-        with open(filepath, 'w') as f:
-            json.dump(asdict(entry), f, default=str)
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(asdict(entry), f, default=str, ensure_ascii=True)
             
         logger.info(f"Feedback saved: {feedback_id} for field '{entry.field_name}'")
         
@@ -119,7 +125,7 @@ class FeedbackCollector:
             if filename.endswith('.json'):
                 filepath = os.path.join(self.storage_path, filename)
                 try:
-                    with open(filepath, 'r') as f:
+                    with open(filepath, 'r', encoding='utf-8') as f:
                         data = json.load(f)
                         if data.get('resume_id') == resume_id:
                             feedback_list.append(data)
@@ -135,7 +141,7 @@ class FeedbackCollector:
             if filename.endswith('.json'):
                 filepath = os.path.join(self.storage_path, filename)
                 try:
-                    with open(filepath, 'r') as f:
+                    with open(filepath, 'r', encoding='utf-8') as f:
                         data = json.load(f)
                         if data.get('field_name') == field_name:
                             feedback_list.append(data)
@@ -151,7 +157,7 @@ class FeedbackCollector:
             if filename.endswith('.json'):
                 filepath = os.path.join(self.storage_path, filename)
                 try:
-                    with open(filepath, 'r') as f:
+                    with open(filepath, 'r', encoding='utf-8') as f:
                         data = json.load(f)
                         if not data.get('processed', False):
                             feedback_list.append(data)
@@ -167,13 +173,13 @@ class FeedbackCollector:
             return False
             
         try:
-            with open(filepath, 'r') as f:
+            with open(filepath, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 
             data['processed'] = True
             
-            with open(filepath, 'w') as f:
-                json.dump(data, f, default=str)
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(data, f, default=str, ensure_ascii=True)
                 
             return True
         except:
@@ -194,7 +200,7 @@ class FeedbackCollector:
             if filename.endswith('.json'):
                 filepath = os.path.join(self.storage_path, filename)
                 try:
-                    with open(filepath, 'r') as f:
+                    with open(filepath, 'r', encoding='utf-8') as f:
                         data = json.load(f)
                         stats['total'] += 1
                         
@@ -235,7 +241,7 @@ class FeedbackCollector:
             if filename.endswith('.json'):
                 filepath = os.path.join(self.storage_path, filename)
                 try:
-                    with open(filepath, 'r') as f:
+                    with open(filepath, 'r', encoding='utf-8') as f:
                         data = json.load(f)
                         
                     

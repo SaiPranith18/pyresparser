@@ -625,14 +625,4 @@ def generate_structured_resume(
 
 if __name__ == "__main__":
     
-    test_sections = {
-        "name": ("John Doe", 0.85),
-        "skills": ("Python, JavaScript, React, AWS, Docker", 0.90),
-        "education": ("Bachelor of Science in Computer Science\nUniversity of Tech\n2020", 0.88),
-        "experience": ("Software Engineer at Tech Corp\n2020 - Present", 0.85),
-        "projects": ("E-commerce Platform\nPython, React, MongoDB", 0.80),
-        "certifications": ("AWS Certified Solutions Architect", 0.75),
-    }
-    
-    result = generate_structured_resume("Sample text", test_sections)
-    print(result)
+    test_sections = ""

@@ -1,0 +1,21 @@
+{
+  "generated_at": "2026-03-05T10:59:10.249250+00:00",
+  "summary": {
+    "total_samples": 1,
+    "field_count": 1,
+    "low_confidence_threshold": 0.65
+  },
+  "fields": {
+    "summary": {
+      "total_samples": 1,
+      "changed_samples": 1,
+      "error_rate": 1.0,
+      "avg_confidence_before": 0.73,
+      "low_confidence_samples": 0,
+      "low_confidence_error_rate": 0.0,
+      "common_mistakes": [
+        
+      ]
+    }
+  }
+}

@@ -296,14 +296,10 @@ def extract_name_from_bold_text(pdf_path: str) -> Tuple[str, float]:
 
 
 def get_feedback_corrections(field_name: str) -> Dict[str, str]:
-    """Get approved corrections from feedback for a specific field.
-    
-    This function now uses permanent correction storage, so corrections
-    persist even if feedback files are deleted.
-    """
+  
     corrections = {}
     try:
-        # First, try to get corrections from permanent storage
+        
         from src.utils.correction_storage import get_correction_storage
         
         storage = get_correction_storage()
@@ -312,7 +308,7 @@ def get_feedback_corrections(field_name: str) -> Dict[str, str]:
         if corrections:
             logger.info(f"Found {len(corrections)} permanent corrections for field '{field_name}'")
         
-        # Also check for any pending corrections from learning system (for backwards compatibility)
+        
         from src.utils.continuous_learning import get_continuous_learning
         
         learning = get_continuous_learning()
@@ -333,17 +329,17 @@ def get_feedback_corrections(field_name: str) -> Dict[str, str]:
 
 def extract_name_with_filename_fallback(text: str, filename: str, pdf_path: Optional[str] = None) -> Tuple[str, float]:
     
-    # Check for feedback corrections first
+    
     corrections = get_feedback_corrections("name")
     
     if corrections:
         logger.info(f"Found {len(corrections)} feedback corrections for name field")
-        # Try to find a correction match in the text
+        
         text_lower = text.lower()
         for original, corrected in corrections.items():
             if original.lower() in text_lower:
                 logger.info(f"Using feedback correction: '{original}' -> '{corrected}'")
-                return corrected, 0.95  # High confidence for user-corrected value
+                return corrected, 0.95  
     
     try:
         extracted_name, confidence = extract_name_from_resume(text)
@@ -735,7 +731,7 @@ def extract_ajax():
         overall_accuracy = calculate_overall_accuracy()
         result_data["overall_accuracy"] = overall_accuracy
         
-        # Get the most recent resume ID for feedback submission
+        
         try:
             from src.models.models import get_all_resumes
             resumes = get_all_resumes()

@@ -1,9 +1,3 @@
-"""
-Database Models for Resume Parser
-
-This module defines the database schema for storing parsed resumes.
-"""
-
 import os
 import logging
 from datetime import datetime
@@ -11,26 +5,13 @@ from typing import Dict, Any, Optional, List
 
 from flask_sqlalchemy import SQLAlchemy
 
-# Initialize SQLAlchemy
+
 db = SQLAlchemy()
 
 logger = logging.getLogger(__name__)
 
 
 class Resume(db.Model):
-    """
-    Resume Model - Stores parsed resume data in the database.
-    
-    Fields:
-        id: Primary key
-        filename: Original PDF filename
-        structured_data: JSON containing all extracted fields
-        extracted_text: Raw text extracted from PDF
-        layout_html: HTML representation for PDF preview
-        original_pdf_path: Path to stored original PDF
-        created_at: Timestamp of upload
-        updated_at: Last update timestamp
-    """
     __tablename__ = 'resumes'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -46,7 +27,6 @@ class Resume(db.Model):
         return f"<Resume {self.id}: {self.filename}>"
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert resume to dictionary."""
         return {
             "id": self.id,
             "filename": self.filename,
@@ -59,7 +39,6 @@ class Resume(db.Model):
         }
     
     def to_full_dict(self) -> Dict[str, Any]:
-        """Convert resume to full dictionary including all fields."""
         return {
             "id": self.id,
             "filename": self.filename,
@@ -73,14 +52,12 @@ class Resume(db.Model):
     
     @property
     def sections(self) -> List[str]:
-        """Get list of extracted sections."""
         if not self.structured_data:
             return []
         return list(self.structured_data.keys())
     
     @property
     def name(self) -> str:
-        """Get candidate name from structured data."""
         if self.structured_data and 'name' in self.structured_data:
             name_data = self.structured_data.get('name', {})
             if isinstance(name_data, dict):
@@ -90,7 +67,6 @@ class Resume(db.Model):
     
     @property
     def email(self) -> str:
-        """Get email from structured data."""
         if self.structured_data and 'email' in self.structured_data:
             email_data = self.structured_data.get('email', {})
             if isinstance(email_data, dict):
@@ -100,12 +76,6 @@ class Resume(db.Model):
 
 
 def init_database(app):
-    """
-    Initialize the database with the Flask app.
-    
-    Args:
-        app: Flask application instance
-    """
     db.init_app(app)
     with app.app_context():
         db.create_all()
@@ -119,19 +89,6 @@ def save_resume(
     layout_html: str = "",
     original_pdf_path: str = ""
 ) -> Resume:
-    """
-    Save a parsed resume to the database.
-    
-    Args:
-        filename: Original PDF filename
-        structured_data: JSON with extracted fields
-        extracted_text: Raw text from PDF
-        layout_html: HTML for PDF preview
-        original_pdf_path: Path to stored PDF
-        
-    Returns:
-        Created Resume object
-    """
     resume = Resume(
         filename=filename,
         structured_data=structured_data,
@@ -146,38 +103,14 @@ def save_resume(
 
 
 def get_resume(resume_id: int) -> Optional[Resume]:
-    """
-    Get a resume by ID.
-    
-    Args:
-        resume_id: Resume ID
-        
-    Returns:
-        Resume object or None
-    """
     return Resume.query.get(resume_id)
 
 
 def get_all_resumes() -> List[Resume]:
-    """
-    Get all resumes ordered by creation date (newest first).
-    
-    Returns:
-        List of Resume objects
-    """
     return Resume.query.order_by(Resume.created_at.desc()).all()
 
 
 def delete_resume(resume_id: int) -> bool:
-    """
-    Delete a resume by ID.
-    
-    Args:
-        resume_id: Resume ID
-        
-    Returns:
-        True if deleted, False if not found
-    """
     resume = Resume.query.get(resume_id)
     if resume:
         db.session.delete(resume)
@@ -192,17 +125,6 @@ def update_resume(
     structured_data: Dict[str, Any] = None,
     layout_html: str = None
 ) -> Optional[Resume]:
-    """
-    Update a resume's data.
-    
-    Args:
-        resume_id: Resume ID
-        structured_data: New structured data (optional)
-        layout_html: New layout HTML (optional)
-        
-    Returns:
-        Updated Resume object or None
-    """
     resume = Resume.query.get(resume_id)
     if not resume:
         return None
@@ -219,15 +141,6 @@ def update_resume(
 
 
 def search_resumes(query: str) -> List[Resume]:
-    """
-    Search resumes by filename or extracted text.
-    
-    Args:
-        query: Search query string
-        
-    Returns:
-        List of matching Resume objects
-    """
     return Resume.query.filter(
         db.or_(
             Resume.filename.ilike(f"%{query}%"),

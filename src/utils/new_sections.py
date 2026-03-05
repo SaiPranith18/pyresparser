@@ -1,10 +1,50 @@
-
 import re
 import logging
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+
+_CORRECTION_ENGINE = None
+
+
+def _get_correction_engine():
+    global _CORRECTION_ENGINE
+    if _CORRECTION_ENGINE is None:
+        try:
+            from src.training.correction_learning import get_correction_model_engine
+            _CORRECTION_ENGINE = get_correction_model_engine()
+        except Exception as e:
+            logging.getLogger(__name__).warning(f"Could not load correction engine: {e}")
+    return _CORRECTION_ENGINE
+
+
+def _apply_corrections(field_name: str, value: str, confidence: float):
+    if not value:
+        return value, confidence
+    
+    engine = _get_correction_engine()
+    if engine is None:
+        return value, confidence
+    
+    try:
+        result = engine.apply(
+            field_name=field_name,
+            value=value,
+            confidence=confidence,
+            force=False
+        )
+        
+        if result.get("applied"):
+            logging.info(f"Applied correction for '{field_name}': {result.get('reason')}")
+            return result.get("corrected_value"), result.get("confidence", confidence)
+        
+    except Exception as e:
+        logging.getLogger(__name__).warning(f"Error applying corrections: {e}")
+    
+    return value, confidence
 
 
 
@@ -126,7 +166,12 @@ def extract_languages_from_resume(text: str) -> tuple:
     confidence = calculate_languages_confidence(languages_text, text)
     
     logger.info(f"Languages extraction completed. Found: {len(cleaned)}, Confidence: {confidence}")
+    
+    languages_text, confidence = _apply_corrections("languages", languages_text, confidence)
     return languages_text, confidence
+
+
+
 
 
 
@@ -567,6 +612,45 @@ SUMMARY_STOP_KEYWORDS = [
     "references", "declaration"
 ]
 
+# Extended patterns to detect skills section headers in summary
+SKILLS_SECTION_PATTERNS = [
+    r'^(?:technical\s+)?skills\s*[:\-–—]?\s*$',
+    r'^(?:programming\s+languages?|technologies?|tools?|soft\s+skills)\s*[:\-–—]?\s*$',
+    r'^(?:technical\s+)?skills\s*$',
+    r'^(?:programming|web\s+development|database|tools)\s*$',
+]
+
+
+def _is_skills_section_header(line: str) -> bool:
+    """Check if a line is a skills section header."""
+    line_lower = line.lower().strip()
+    
+    # Check exact matches
+    if line_lower in SUMMARY_STOP_KEYWORDS:
+        return True
+    
+    # Check startswith
+    for stop in SUMMARY_STOP_KEYWORDS:
+        if line_lower.startswith(stop):
+            return True
+    
+    # Check regex patterns
+    for pattern in SKILLS_SECTION_PATTERNS:
+        if re.match(pattern, line_lower, re.IGNORECASE):
+            return True
+    
+    # Check if line contains "skills" as a header (not in the middle of text)
+    if re.search(r'^(?:technical\s+)?skills\s*[:\-–—]?\s*$', line_lower, re.IGNORECASE):
+        return True
+    
+    # Check for skill category headers like "Programming Languages:", "Web Development:", etc.
+    skill_categories = ['programming languages', 'web development', 'database', 'tools', 'soft skills']
+    for cat in skill_categories:
+        if line_lower.startswith(cat):
+            return True
+    
+    return False
+
 
 def calculate_summary_confidence(summary_text: str, original_text: str) -> float:
     if not summary_text or not summary_text.strip():
@@ -640,6 +724,10 @@ def extract_summary_from_resume(text: str) -> tuple:
                     should_stop = True
                     break
             
+            # Also check for skills section headers using the extended pattern detection
+            if not should_stop and _is_skills_section_header(line_stripped):
+                should_stop = True
+            
             if should_stop:
                 break
         
@@ -650,44 +738,16 @@ def extract_summary_from_resume(text: str) -> tuple:
     summary_text = " ".join(summary_lines)
     confidence = calculate_summary_confidence(summary_text, text)
     
+    
+    summary_text, confidence = _apply_corrections("summary", summary_text, confidence)
+    
     logger.info(f"Summary extraction completed. Confidence: {confidence}")
     return summary_text, confidence
 
 
 if __name__ == "__main__":
     
-    sample_text = """
-    JOHN DOE
-    
-    Summary
-    Experienced software engineer with 5+ years of experience in Python and JavaScript
-    
-    Skills
-    Python, JavaScript, React
-    
-    Languages
-    English (Fluent), Hindi (Native), Spanish (Basic)
-    
-    Interests
-    Photography, Reading, Hiking
-    
-    Achievements
-    - Best Employee Award 2022
-    - Won Hackathon First Prize
-    
-    Publications
-    Research Paper on AI - 2021
-    
-    Volunteer
-    Teaching underprivileged children
-    
-    Education
-    Bachelor of Science
-    
-    Experience
-    Software Engineer at ABC Corp
-    """
-    
+    sample_text = ""
     print("Languages:", extract_languages_from_resume(sample_text))
     print("Interests:", extract_interests_from_resume(sample_text))
     print("Achievements:", extract_achievements_from_resume(sample_text))

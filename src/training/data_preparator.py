@@ -8,6 +8,13 @@ from dataclasses import dataclass, asdict
 
 logger = logging.getLogger(__name__)
 
+try:
+    from src.training.correction_learning import get_correction_learning_store
+    STRUCTURED_CORRECTION_DATA_AVAILABLE = True
+except ImportError:
+    STRUCTURED_CORRECTION_DATA_AVAILABLE = False
+    get_correction_learning_store = None
+
 
 @dataclass
 class TrainingExample:
@@ -152,6 +159,45 @@ class DataPreparator:
             except Exception as e:
                 logger.error(f"Error loading sample {filename}: {e}")
                 
+        return examples
+
+    def load_structured_corrections(
+        self,
+        field_name: Optional[str] = None,
+        only_changed: bool = True
+    ) -> List[TrainingExample]:
+        examples: List[TrainingExample] = []
+        if not STRUCTURED_CORRECTION_DATA_AVAILABLE or get_correction_learning_store is None:
+            return examples
+
+        try:
+            store = get_correction_learning_store()
+            samples = store.load_samples(
+                field_name=field_name,
+                status="approved",
+                only_changed=only_changed,
+            )
+            for sample in samples:
+                examples.append(
+                    TrainingExample(
+                        input_text=sample.get("original_value", ""),
+                        output_text=sample.get("corrected_value", ""),
+                        field=sample.get("field_name", ""),
+                        metadata={
+                            "sample_id": sample.get("sample_id"),
+                            "timestamp": sample.get("timestamp", ""),
+                            "confidence_before": sample.get("confidence_before", 0.0),
+                            "confidence_after": sample.get("confidence_after", 0.0),
+                            "feedback_type": sample.get("feedback_type", ""),
+                            "source": sample.get("source", ""),
+                        },
+                        source="feedback",
+                        verified=True,
+                    )
+                )
+        except Exception as e:
+            logger.error(f"Error loading structured corrections: {e}")
+
         return examples
     
     def add_manual_example(
@@ -371,6 +417,9 @@ class DataPreparator:
         
         
         examples.extend(self.load_approved_corrections(field))
+
+
+        examples.extend(self.load_structured_corrections(field, only_changed=True))
         
         
         manual_dir = os.path.join(self.data_dir, 'manual', field)
@@ -415,7 +464,8 @@ class DataPreparator:
         
         sources = [
             self.load_feedback_data,
-            self.load_approved_corrections
+            self.load_approved_corrections,
+            self.load_structured_corrections,
         ]
         
         for source_func in sources:
