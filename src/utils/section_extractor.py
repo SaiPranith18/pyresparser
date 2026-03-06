@@ -13,6 +13,14 @@ from src.models.projects import extract_projects_section
 from src.models.experience import extract_experience_from_resume
 from src.models.awards import extract_awards_from_resume
 from src.models.references import extract_references_from_resume
+from src.models.declaration import extract_declaration_from_resume
+from src.models.contact import extract_contact_from_resume
+from src.models.strengths import extract_strengths_from_resume
+from src.models.training import extract_training_from_resume
+from src.models.extracurricular import extract_extracurricular_from_resume
+from src.models.email import extract_email_from_resume, extract_all_emails_from_text
+from src.models.phone import extract_phone_from_resume, extract_all_phones_from_text
+from src.models.links import extract_links_from_resume, extract_all_links_from_text
 
 
 
@@ -576,6 +584,70 @@ def extract_section_from_resume(text, section_type, pdf_path=None):
     if section_type == "references":
         result, confidence = extract_references_from_resume(text)
         
+        
+        result, confidence, _ = _apply_corrections(section_type, result, confidence)
+        return result, confidence
+    
+    if section_type == "declaration":
+        result, confidence = extract_declaration_from_resume(text)
+        result, confidence, _ = _apply_corrections(section_type, result, confidence)
+        return result, confidence
+    
+    if section_type == "contact":
+        result, confidence = extract_contact_from_resume(text)
+        result, confidence, _ = _apply_corrections(section_type, result, confidence)
+        return result, confidence
+    
+    if section_type == "strengths":
+        result, confidence = extract_strengths_from_resume(text)
+        result, confidence, _ = _apply_corrections(section_type, result, confidence)
+        return result, confidence
+    
+    if section_type == "training":
+        result, confidence = extract_training_from_resume(text)
+        result, confidence, _ = _apply_corrections(section_type, result, confidence)
+        return result, confidence
+    
+    if section_type == "extra-curricular":
+        result, confidence = extract_extracurricular_from_resume(text)
+        result, confidence, _ = _apply_corrections(section_type, result, confidence)
+        return result, confidence
+    
+    if section_type == "email":
+        result, confidence = extract_email_from_resume(text)
+        
+        
+        if not result or confidence == 0.0:
+            emails, conf = extract_all_emails_from_text(text)
+            if emails:
+                result = "\n".join(emails)
+                confidence = conf
+        
+        result, confidence, _ = _apply_corrections(section_type, result, confidence)
+        return result, confidence
+    
+    if section_type == "phone":
+        result, confidence = extract_phone_from_resume(text)
+        
+        
+        if not result or confidence == 0.0:
+            phones, conf = extract_all_phones_from_text(text)
+            if phones:
+                result = "\n".join(phones)
+                confidence = conf
+        
+        result, confidence, _ = _apply_corrections(section_type, result, confidence)
+        return result, confidence
+    
+    if section_type == "links":
+        result, confidence = extract_links_from_resume(text)
+        
+        
+        if not result or confidence == 0.0:
+            links, conf = extract_all_links_from_text(text)
+            if links:
+                result = "\n".join(links)
+                confidence = conf
         
         result, confidence, _ = _apply_corrections(section_type, result, confidence)
         return result, confidence

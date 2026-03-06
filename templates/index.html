@@ -239,11 +239,21 @@
                     window.latestResumeId = data.saved_resume_id || data.resume_id;
                 }
 
+                // Store all sections data for table view
+                window.allSectionsData = data;
+
                 hideLoading();
                 
                 if (data.status === "success" && data.headings && data.headings.length > 0) {
                     populateSectionsFromHeadings(data.headings);
                     showDetectedSections(data.headings.length);
+                    
+                    // Auto-show all sections table after upload
+                    if (data.all_sections && data.all_sections.length > 0) {
+                        setTimeout(() => {
+                            showAllSectionsTable();
+                        }, 100);
+                    }
                 } else {
                     populateDefaultSections();
                     showDetectedSections(0, true);
@@ -254,7 +264,7 @@
             }
         }
 
-        function populateSectionsFromHeadings(headings) {
+function populateSectionsFromHeadings(headings) {
             sectionSelect.innerHTML = '<option value="">Select section</option>';
             const addedSections = new Set();
 
@@ -269,6 +279,7 @@
             if (!addedSections.has("name")) addSectionOption("name");
             addSectionOption("fulltext", "Full Text (Plain)");
             addSectionOption("fulltext_layout", "Full Text (PDF)");
+            addSectionOption("all_sections", "All Sections (Table View)");
         }
 
         function addSectionOption(value, label) {
@@ -278,9 +289,10 @@
             sectionSelect.appendChild(option);
         }
 
-        function populateDefaultSections() {
+function populateDefaultSections() {
             sectionSelect.innerHTML = '<option value="">Select section</option>';
             defaultSections.forEach(section => addSectionOption(section.value, section.label));
+            addSectionOption("all_sections", "All Sections (Table View)");
         }
 
         function showDetectedSections(count, useDefault = false) {
@@ -299,6 +311,8 @@
             loadingIndicator.style.display = 'none';
         }
 
+        window.allSectionsData = null;
+
         sectionSelect.addEventListener('change', async function() {
             const selectedSection = sectionSelect.value;
             const file = resumeFile.files[0];
@@ -308,10 +322,82 @@
 
             if (selectedSection === "fulltext_layout") {
                 await extractLayout(file);
+            } else if (selectedSection === "all_sections") {
+                await showAllSectionsTable();
             } else {
                 await extractSection(file, selectedSection);
             }
         });
+
+        async function showAllSectionsTable() {
+            hideLoading();
+            
+            if (!window.allSectionsData || !window.allSectionsData.all_sections) {
+                showError('Please upload a resume first to view all sections');
+                return;
+            }
+
+            const sections = window.allSectionsData.all_sections;
+            const fullText = window.allSectionsData.full_text || '';
+            
+            let tableHTML = `
+                <div class="sections-table-container">
+                    <div class="sections-summary">
+                        <span class="badge bg-primary">${sections.length} Sections Detected</span>
+                    </div>
+                    <table class="sections-table">
+                        <thead>
+                            <tr>
+                                <th>Section</th>
+                                <th>Content</th>
+                                <th>Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            sections.forEach(item => {
+                const confidenceClass = item.confidence >= 70 ? 'high' : item.confidence >= 40 ? 'medium' : 'low';
+                const contentPreview = item.content.length > 200 ? item.content.substring(0, 200) + '...' : item.content;
+                tableHTML += `
+                    <tr>
+                        <td class="section-name">${item.section}</td>
+                        <td class="section-content">${escapeHtml(contentPreview)}</td>
+                        <td class="confidence-cell">
+                            <span class="confidence-badge ${confidenceClass}">${item.confidence}%</span>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                        </tbody>
+                    </table>
+                    ${fullText ? `
+                    <div class="full-text-section">
+                        <h4><i class="fas fa-file-alt"></i> Full Resume Text</h4>
+                        <pre class="full-text-content">${escapeHtml(fullText)}</pre>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            const resultsContent = document.getElementById('resultsContent');
+            resultsContent.innerHTML = tableHTML;
+            resultsContent.style.background = 'white';
+            
+            document.getElementById('confidencePill').className = 'confidence-pill high';
+            document.getElementById('confidencePill').innerHTML = '<i class="fas fa-check"></i> Complete';
+            
+            resultBox.style.display = 'block';
+            document.getElementById('correctionBox').style.display = 'none';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
         async function extractLayout(file) {
             const formData = new FormData();

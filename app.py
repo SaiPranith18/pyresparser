@@ -480,6 +480,21 @@ def extract_all_sections(text: str, pdf_path: Optional[str] = None, filename: st
                 logger.error(f"Error extracting {section_name}: {e}")
                 results[section_name] = ("", 0.0)
     
+    
+    additional_sections = [
+        "declaration", "contact", "strengths", "training", 
+        "extra-curricular", "email", "phone", "links"
+    ]
+    
+    for section_name in additional_sections:
+        try:
+            result, conf = extract_section_from_resume(text, section_name, pdf_path)
+            results[section_name] = (result, conf)
+            confidence_scores[f"{section_name}_confidence"] = conf
+        except Exception as e:
+            logger.error(f"Error extracting {section_name}: {e}")
+            results[section_name] = ("", 0.0)
+    
     return results
 
 
@@ -776,6 +791,16 @@ def detect_headings_api():
         try:
             all_sections = extract_all_sections(text, file_path, file.filename)
             
+            # Build sections table for UI display
+            sections_table = []
+            for section_name, (data, confidence) in all_sections.items():
+                if data and data.strip():
+                    sections_table.append({
+                        "section": section_name.replace('-', ' ').title(),
+                        "content": data,
+                        "confidence": round(confidence * 100, 1)
+                    })
+            
             structured_data = {}
             if STRUCTURED_OUTPUT_AVAILABLE:
                 all_sections["text"] = (text, text_confidence)
@@ -809,7 +834,9 @@ def detect_headings_api():
                 "headings": heading_texts,
                 "headings_confidence": headings_confidence,
                 "text_confidence": text_confidence,
-                "saved_resume_id": resume.id
+                "saved_resume_id": resume.id,
+                "all_sections": sections_table,
+                "full_text": text
             })
         except Exception as e:
             logger.error(f"Error saving resume to database: {e}")
@@ -818,7 +845,9 @@ def detect_headings_api():
                 "status": "success",
                 "headings": heading_texts,
                 "headings_confidence": headings_confidence,
-                "text_confidence": text_confidence
+                "text_confidence": text_confidence,
+                "all_sections": [],
+                "full_text": text
             })
 
     except Exception as e:
