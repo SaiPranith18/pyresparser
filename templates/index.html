@@ -14,14 +14,43 @@
 
 
 <body>
-    <div class="parser-container">
-        <header class="parser-header">
+  
+    <nav class="parser-navbar">
+        <div class="navbar-brand">
             <h1><i class="fas fa-file-contract"></i> Resume Parser</h1>
-        </header>
+        </div>
+        
+        <div class="navbar-controls">
+        
+            <div class="nav-status-badge" id="navStatus">
+                <i class="fas fa-circle"></i> Ready
+            </div>
+            
+            <div class="nav-upload-area" id="navUploadArea">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span id="fileName">Upload Resume</span>
+                <input type="file" id="resumeFile" name="resume" accept=".pdf,.docx,.doc,.png,.jpg,.jpeg" required>
+            </div>
+            
+          
+            <div class="nav-section-select">
+                <div class="select-wrapper">
+                    <select name="section" id="sectionSelect" required>
+                        <option value="">Select section</option>
+                    </select>
+                    <span id="detectedSections" class="detected-sections-inline"></span>
+                </div>
+            </div>
+        </div>
+    </nav>
 
-        <div class="main-content">
-    
-            <div class="left-column">
+
+    <div class="parser-container">
+        <div class="main-content" id="mainContent">
+            
+         
+            <div class="left-column" id="leftColumn">
+                
                 {% if overall_accuracy %}
                 <div class="accuracy-section">
                     <div class="accuracy-header">
@@ -32,7 +61,8 @@
                         <div class="confidence-item">
                             <label>Text</label>
                             <div class="progress">
-                                <div class="progress-bar bg-primary" id="textConfidenceBar" role="progressbar" style="width: 0%"></div>
+                                <div class="progress-bar bg-primary" id="textConfidenceBar" role="progressbar"
+                                    style="width: 0%"></div>
                             </div>
                             <div class="confidence-value">
                                 <span></span>
@@ -42,7 +72,8 @@
                         <div class="confidence-item">
                             <label>Skills</label>
                             <div class="progress">
-                                <div class="progress-bar bg-success" id="skillsConfidenceBar" role="progressbar" style="width: 0%"></div>
+                                <div class="progress-bar bg-success" id="skillsConfidenceBar" role="progressbar"
+                                    style="width: 0%"></div>
                             </div>
                             <div class="confidence-value">
                                 <span></span>
@@ -52,7 +83,8 @@
                         <div class="confidence-item">
                             <label>Education</label>
                             <div class="progress">
-                                <div class="progress-bar bg-info" id="educationConfidenceBar" role="progressbar" style="width: 0%"></div>
+                                <div class="progress-bar bg-info" id="educationConfidenceBar" role="progressbar"
+                                    style="width: 0%"></div>
                             </div>
                             <div class="confidence-value">
                                 <span></span>
@@ -62,7 +94,8 @@
                         <div class="confidence-item">
                             <label>Experience</label>
                             <div class="progress">
-                                <div class="progress-bar bg-warning" id="projectsConfidenceBar" role="progressbar" style="width: 0%"></div>
+                                <div class="progress-bar bg-warning" id="projectsConfidenceBar" role="progressbar"
+                                    style="width: 0%"></div>
                             </div>
                             <div class="confidence-value">
                                 <span></span>
@@ -73,32 +106,7 @@
                 </div>
                 {% endif %}
 
-
-                <div class="upload-card">
-                    <h3 class="upload-card-title"><i class="fas fa-cloud-upload-alt"></i> Upload Resume</h3>
-                    <div class="upload-area" id="uploadArea">
-                        <i class="fas fa-file-pdf upload-icon"></i>
-                        <h3>Drop your resume</h3>
-                        <p>or click to browse</p>
-                        <span class="browse-btn">Choose File</span>
-<input type="file" id="resumeFile" name="resume" accept=".pdf,.docx,.doc,.png,.jpg,.jpeg" required>
-                        <p class="upload-formats">PDF, DOCX, DOC, PNG, JPG</p>
-                    </div>
-                </div>
-
-
-                <div class="section-select-card">
-                    <label><i class="fas fa-list-ul me-2"></i>Select section to extract:</label>
-                    <select name="section" id="sectionSelect" required>
-                        <option value="">Upload a resume first</option>
-                    </select>
-                    <div id="detectedSections" class="detected-sections"></div>
-                </div>
-            </div>
-
-
-            <div class="right-column">
-
+                
                 <div id="loadingIndicator" class="results-card" style="display: none;">
                     <div class="loading-overlay">
                         <div class="loading-spinner"></div>
@@ -106,6 +114,7 @@
                     </div>
                 </div>
 
+              
                 <div id="resultBox" class="results-card" style="display: none;">
                     <div class="results-header">
                         <h3><i class="fas fa-clipboard-list"></i> Extraction Results</h3>
@@ -122,6 +131,20 @@
                             <p class="correction-original">Original: <span id="originalValue"></span></p>
                         </div>
                     </div>
+                </div>
+            </div>
+
+       
+            <div class="right-column" id="rightColumn" style="display: none;">
+                
+                <div id="fullTextViewBox" class="upload-card" style="display: none;">
+                    <h3 class="upload-card-title"><i class="fas fa-file-alt"></i> Full Resume Text</h3>
+                    <div id="fullTextViewContent" class="full-text-view-content"></div>
+                </div>
+
+                <div id="tableViewBox" class="upload-card">
+                    <h3 class="upload-card-title"><i class="fas fa-table"></i> Sections Table</h3>
+                    <div id="tableViewContent" class="table-view-content"></div>
                 </div>
             </div>
         </div>
@@ -184,35 +207,52 @@
         }
 
         const resumeFile = document.getElementById('resumeFile');
-        const uploadArea = document.getElementById('uploadArea');
+        const navUploadArea = document.getElementById('navUploadArea');
         const sectionSelect = document.getElementById('sectionSelect');
         const loadingIndicator = document.getElementById('loadingIndicator');
         const loadingText = document.getElementById('loadingText');
         const detectedSections = document.getElementById('detectedSections');
         const resultBox = document.getElementById('resultBox');
+        const leftColumn = document.getElementById('leftColumn');
+        const rightColumn = document.getElementById('rightColumn');
+        const mainContent = document.getElementById('mainContent');
+        const navStatus = document.getElementById('navStatus');
+        const fileNameDisplay = document.getElementById('fileName');
+
+    
+        let fullTextPdfExtracted = false;
 
         resumeFile.addEventListener('change', handleFileSelect);
-        
+
         function handleFileSelect(e) {
             const file = e.target.files[0];
             if (!file) return;
+            
+      
+            fileNameDisplay.textContent = file.name;
+            
             window.latestResumeId = null;
+            fullTextPdfExtracted = false;
+            
+           
+            resetToSingleColumn();
+            
             uploadFileAndDetectSections(file);
         }
 
-        uploadArea.addEventListener('dragover', function(e) {
+        navUploadArea.addEventListener('dragover', function (e) {
             e.preventDefault();
-            uploadArea.classList.add('dragover');
+            navUploadArea.classList.add('dragover');
         });
 
-        uploadArea.addEventListener('dragleave', function(e) {
+        navUploadArea.addEventListener('dragleave', function (e) {
             e.preventDefault();
-            uploadArea.classList.remove('dragover');
+            navUploadArea.classList.remove('dragover');
         });
 
-        uploadArea.addEventListener('drop', function(e) {
+        navUploadArea.addEventListener('drop', function (e) {
             e.preventDefault();
-            uploadArea.classList.remove('dragover');
+            navUploadArea.classList.remove('dragover');
             const file = e.dataTransfer.files[0];
             if (file) {
                 resumeFile.files = e.dataTransfer.files;
@@ -220,12 +260,13 @@
             }
         });
 
-        uploadArea.addEventListener('click', function() {
+        navUploadArea.addEventListener('click', function () {
             resumeFile.click();
         });
 
         async function uploadFileAndDetectSections(file) {
             showLoading('Detecting sections...');
+            updateNavStatus('processing', 'Processing...');
             sectionSelect.innerHTML = '<option value="">Detecting...</option>';
 
             const formData = new FormData();
@@ -234,37 +275,38 @@
             try {
                 const response = await fetch('/detect-headings', { method: 'POST', body: formData });
                 const data = await response.json();
-                
+
                 if (data.saved_resume_id || data.resume_id) {
                     window.latestResumeId = data.saved_resume_id || data.resume_id;
                 }
 
-                // Store all sections data for table view
+
                 window.allSectionsData = data;
 
                 hideLoading();
-                
+                updateNavStatus('ready', 'Ready');
+
                 if (data.status === "success" && data.headings && data.headings.length > 0) {
                     populateSectionsFromHeadings(data.headings);
                     showDetectedSections(data.headings.length);
-                    
-                    // Auto-show all sections table after upload
-                    if (data.all_sections && data.all_sections.length > 0) {
-                        setTimeout(() => {
-                            showAllSectionsTable();
-                        }, 100);
-                    }
-                } else {
+                }
+                else {
                     populateDefaultSections();
                     showDetectedSections(0, true);
                 }
             } catch (error) {
                 hideLoading();
+                updateNavStatus('error', 'Error');
                 populateDefaultSections();
             }
         }
 
-function populateSectionsFromHeadings(headings) {
+        function updateNavStatus(status, text) {
+            navStatus.className = 'nav-status-badge status-' + status;
+            navStatus.innerHTML = `<i class="fas fa-${status === 'processing' ? 'spinner fa-spin' : status === 'ready' ? 'circle' : status === 'error' ? 'exclamation-circle' : 'circle'}"></i> ${text}`;
+        }
+
+        function populateSectionsFromHeadings(headings) {
             sectionSelect.innerHTML = '<option value="">Select section</option>';
             const addedSections = new Set();
 
@@ -279,7 +321,7 @@ function populateSectionsFromHeadings(headings) {
             if (!addedSections.has("name")) addSectionOption("name");
             addSectionOption("fulltext", "Full Text (Plain)");
             addSectionOption("fulltext_layout", "Full Text (PDF)");
-            addSectionOption("all_sections", "All Sections (Table View)");
+            
         }
 
         function addSectionOption(value, label) {
@@ -289,14 +331,14 @@ function populateSectionsFromHeadings(headings) {
             sectionSelect.appendChild(option);
         }
 
-function populateDefaultSections() {
+        function populateDefaultSections() {
             sectionSelect.innerHTML = '<option value="">Select section</option>';
             defaultSections.forEach(section => addSectionOption(section.value, section.label));
             addSectionOption("all_sections", "All Sections (Table View)");
         }
 
         function showDetectedSections(count, useDefault = false) {
-            detectedSections.innerHTML = useDefault 
+            detectedSections.innerHTML = useDefault
                 ? '<span class="detected-tag"><i class="fas fa-info-circle"></i> Standard</span>'
                 : `<span class="detected-tag"><i class="fas fa-check-circle"></i> ${count} sections</span>`;
         }
@@ -313,15 +355,16 @@ function populateDefaultSections() {
 
         window.allSectionsData = null;
 
-        sectionSelect.addEventListener('change', async function() {
+        sectionSelect.addEventListener('change', async function () {
             const selectedSection = sectionSelect.value;
             const file = resumeFile.files[0];
             if (!file || !selectedSection) return;
 
             showLoading('Extracting...');
+            updateNavStatus('processing', 'Extracting...');
 
             if (selectedSection === "fulltext_layout") {
-                await extractLayout(file);
+                await extractLayoutWithSections(file);
             } else if (selectedSection === "all_sections") {
                 await showAllSectionsTable();
             } else {
@@ -330,67 +373,34 @@ function populateDefaultSections() {
         });
 
         async function showAllSectionsTable() {
+            document.getElementById('fullTextViewBox').style.display = 'none';
+            document.getElementById('tableViewBox').style.display = 'none';
+
             hideLoading();
-            
+            updateNavStatus('ready', 'Ready');
+
             if (!window.allSectionsData || !window.allSectionsData.all_sections) {
                 showError('Please upload a resume first to view all sections');
                 return;
             }
 
             const sections = window.allSectionsData.all_sections;
-            const fullText = window.allSectionsData.full_text || '';
             
-            let tableHTML = `
-                <div class="sections-table-container">
-                    <div class="sections-summary">
-                        <span class="badge bg-primary">${sections.length} Sections Detected</span>
-                    </div>
-                    <table class="sections-table">
-                        <thead>
-                            <tr>
-                                <th>Section</th>
-                                <th>Content</th>
-                                <th>Confidence</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
             
-            sections.forEach(item => {
-                const confidenceClass = item.confidence >= 70 ? 'high' : item.confidence >= 40 ? 'medium' : 'low';
-                const contentPreview = item.content.length > 200 ? item.content.substring(0, 200) + '...' : item.content;
-                tableHTML += `
-                    <tr>
-                        <td class="section-name">${item.section}</td>
-                        <td class="section-content">${escapeHtml(contentPreview)}</td>
-                        <td class="confidence-cell">
-                            <span class="confidence-badge ${confidenceClass}">${item.confidence}%</span>
-                        </td>
-                    </tr>
-                `;
-            });
-            
-            tableHTML += `
-                        </tbody>
-                    </table>
-                    ${fullText ? `
-                    <div class="full-text-section">
-                        <h4><i class="fas fa-file-alt"></i> Full Resume Text</h4>
-                        <pre class="full-text-content">${escapeHtml(fullText)}</pre>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
-            
+            showSectionsTable(sections);
+
             const resultsContent = document.getElementById('resultsContent');
-            resultsContent.innerHTML = tableHTML;
+            resultsContent.innerHTML = '<p class="text-muted"><i class="fas fa-table"></i> Select "Full Text (PDF)" to view table in right panel</p>';
             resultsContent.style.background = 'white';
-            
+
             document.getElementById('confidencePill').className = 'confidence-pill high';
             document.getElementById('confidencePill').innerHTML = '<i class="fas fa-check"></i> Complete';
-            
+
             resultBox.style.display = 'block';
             document.getElementById('correctionBox').style.display = 'none';
+            
+      
+            resetToSingleColumn();
         }
 
         function escapeHtml(text) {
@@ -420,6 +430,73 @@ function populateDefaultSections() {
             }
         }
 
+
+        async function extractLayoutWithSections(file) {
+            const formData = new FormData();
+            formData.append('resume', file);
+            formData.append('format', 'html');
+
+            try {
+                const response = await fetch('/api/extract-layout', { method: 'POST', body: formData });
+                const data = await response.json();
+                hideLoading();
+                updateNavStatus('ready', 'Ready');
+
+                if (data.status === "success" && data.html_output) {
+                    
+                    fullTextPdfExtracted = true;
+             
+                    showLayoutWithSections(data.html_output, window.allSectionsData?.all_sections || []);
+                
+                    showSectionsTable(window.allSectionsData?.all_sections || []);
+                    
+                   
+                    enableTwoColumnLayout();
+                } else {
+                    showError('Could not extract layout');
+                }
+            } catch (error) {
+                hideLoading();
+                updateNavStatus('error', 'Error');
+                showError('Error extracting layout');
+            }
+        }
+
+        function enableTwoColumnLayout() {
+            rightColumn.style.display = 'flex';
+            mainContent.classList.add('two-column-view');
+        }
+
+        function resetToSingleColumn() {
+            rightColumn.style.display = 'none';
+            mainContent.classList.remove('two-column-view');
+        }
+
+        function showLayoutWithSections(layoutHtml, sections) {
+            const resultsContent = document.getElementById('resultsContent');
+
+            let html = `
+                <div class="extraction-split-view-right">
+                    <div class="extraction-panel pdf-panel">
+                        <div class="panel-header">
+                            <h4><i class="fas fa-file-pdf"></i> Full Resume (PDF Format)</h4>
+                        </div>
+                        <div class="panel-content layout-content">${layoutHtml}</div>
+                    </div>
+                </div>
+            `;
+
+            resultsContent.innerHTML = html;
+            resultsContent.style.background = 'white';
+
+            document.getElementById('confidencePill').className = 'confidence-pill high';
+            document.getElementById('confidencePill').innerHTML = '<i class="fas fa-check"></i> Complete';
+
+            resultBox.style.display = 'block';
+            document.getElementById('correctionBox').style.display = 'none';
+        }
+
+
         async function extractSection(file, section) {
             const formData = new FormData();
             formData.append('resume', file);
@@ -428,27 +505,373 @@ function populateDefaultSections() {
             try {
                 const response = await fetch('/extract', { method: 'POST', body: formData });
                 const data = await response.json();
-                
+
                 if (data.resume_id) window.latestResumeId = data.resume_id;
                 hideLoading();
-                
-                let resultContent = Array.isArray(data.result) ? data.result.join('\n') : (data.result || 'No data found');
-                showResults(resultContent, data.confidence || 0, false);
+                updateNavStatus('ready', 'Ready');
+
+               
+                resetToSingleColumn();
+
+                if (section === 'fulltext' && window.allSectionsData) {
+                    showFullTextWithSections(data.result, window.allSectionsData.all_sections);
+                } else {
+                    let resultContent = Array.isArray(data.result) ? data.result.join('\n') : (data.result || 'No data found');
+                    showResults(resultContent, data.confidence || 0, false);
+                }
             } catch (error) {
                 hideLoading();
+                updateNavStatus('error', 'Error');
                 showError('Error extracting section');
             }
         }
 
+        function showFullTextWithSections(fullText, sections) {
+            document.getElementById('fullTextViewBox').style.display = 'none';
+            document.getElementById('tableViewBox').style.display = 'none';
+
+            const resultsContent = document.getElementById('resultsContent');
+
+            const headingPatterns = [];
+            sections.forEach(section => {
+                const sectionName = section.section.toLowerCase();
+                headingPatterns.push({
+                    name: section.section,
+                    patterns: [
+                        new RegExp(`\\b${sectionName}\\b`, 'gi'),
+                        new RegExp(`\\b${sectionName.replace('-', ' ')}\\b`, 'gi')
+                    ]
+                });
+            });
+
+            let highlightedText = escapeHtml(fullText || 'No text available');
+            headingPatterns.forEach(heading => {
+                heading.patterns.forEach(pattern => {
+                    highlightedText = highlightedText.replace(pattern,
+                        `<span class="heading-highlight">${heading.name}</span>`);
+                });
+            });
+
+            let html = `
+                <div class="fulltext-split-center">
+                    <div class="panel-header">
+                        <h4><i class="fas fa-file-alt"></i> Full Resume Text</h4>
+                    </div>
+                    <div class="panel-content">
+                        <div class="highlighted-text">${highlightedText}</div>
+                    </div>
+                </div>
+            `;
+
+            resultsContent.innerHTML = html;
+            resultsContent.style.background = 'transparent';
+
+            document.getElementById('confidencePill').className = 'confidence-pill high';
+            document.getElementById('confidencePill').innerHTML = '<i class="fas fa-check"></i> Complete';
+
+            resultBox.style.display = 'block';
+            document.getElementById('correctionBox').style.display = 'none';
+
+        }
+
+        function showFullTextInRightColumn(fullText) {
+            const fullTextViewBox = document.getElementById('fullTextViewBox');
+            const fullTextViewContent = document.getElementById('fullTextViewContent');
+
+            if (!fullText || fullText.trim() === '') {
+                fullTextViewBox.style.display = 'none';
+                return;
+            }
+
+            const headingPatterns = [];
+            const sections = window.allSectionsData?.all_sections || [];
+            sections.forEach(section => {
+                const sectionName = section.section.toLowerCase();
+                headingPatterns.push({
+                    name: section.section,
+                    patterns: [
+                        new RegExp(`\\b${sectionName}\\b`, 'gi'),
+                        new RegExp(`\\b${sectionName.replace('-', ' ')}\\b`, 'gi')
+                    ]
+                });
+            });
+
+            let highlightedText = escapeHtml(fullText);
+            headingPatterns.forEach(heading => {
+                heading.patterns.forEach(pattern => {
+                    highlightedText = highlightedText.replace(pattern,
+                        `<span class="heading-highlight">${heading.name}</span>`);
+                });
+            });
+
+            let fullTextHTML = `
+                <div class="full-text-view-container">
+                    <div class="full-text-scroll">
+                        <pre class="full-text-content">${highlightedText}</pre>
+                    </div>
+                </div>
+            `;
+
+            fullTextViewContent.innerHTML = fullTextHTML;
+            fullTextViewBox.style.display = 'block';
+        }
+
+        function showSectionsTable(sections) {
+            const tableViewBox = document.getElementById('tableViewBox');
+            const tableViewContent = document.getElementById('tableViewContent');
+
+            if (!sections || sections.length === 0) {
+                tableViewBox.style.display = 'none';
+                return;
+            }
+
+            let tableHTML = `
+                <div class="sections-summary-right">
+                </div>
+                <table class="sections-table" id="editableSectionsTable">
+                    <thead>
+                        <tr>
+                            <th>Section</th>
+                            <th>Original Content</th>
+                            <th>Correction</th>
+                            <th>Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            sections.forEach((item, index) => {
+                const confidenceClass = item.confidence >= 70 ? 'high' : item.confidence >= 40 ? 'medium' : 'low';
+                const contentId = `content-${index}`;
+                const correctionId = `correction-${index}`;
+                const originalContent = escapeHtml(item.content);
+                
+                tableHTML += `
+                    <tr data-section="${item.section}" data-original="${originalContent}" data-index="${index}">
+                        <td class="section-name">${item.section}</td>
+                        <td class="section-content" id="${contentId}">${originalContent}</td>
+                        <td class="correction-cell">
+                            <input type="text" class="correction-input" id="${correctionId}" placeholder="Enter correction...">
+                        </td>
+                        <td class="confidence-cell">
+                            <span class="confidence-badge ${confidenceClass}">${item.confidence}%</span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `
+                    </tbody>
+                </table>
+                <div class="table-actions">
+                    <button class="submit-all-btn" onclick="submitAllCorrections()">
+                        <i class="fas fa-check-circle"></i> Submit All Corrections
+                    </button>
+                </div>
+            `;
+
+            tableViewContent.innerHTML = tableHTML;
+            tableViewBox.style.display = 'block';
+        }
+
+        function submitAllCorrections() {
+            const rows = document.querySelectorAll('#editableSectionsTable tbody tr');
+            let correctionsSubmitted = 0;
+            let emptyCount = 0;
+            
+            rows.forEach((row, index) => {
+                const sectionName = row.dataset.section;
+                const originalContent = row.dataset.original;
+                const correctionInput = row.querySelector('.correction-input');
+                const correctedContent = correctionInput.value.trim();
+                
+                if (!correctedContent) {
+                    emptyCount++;
+                    return;
+                }
+                
+                if (originalContent.trim() === correctedContent.trim()) {
+                    return;
+                }
+                
+                
+                const resumeId = window.latestResumeId || 0;
+                submitTableCorrection(resumeId, sectionName, originalContent, correctedContent, index);
+                correctionsSubmitted++;
+            });
+            
+            if (correctionsSubmitted === 0 && emptyCount > 0) {
+                showNotification('Please enter at least one correction value', 'error');
+            } else if (correctionsSubmitted === 0) {
+                showNotification('No changes to submit', 'info');
+            }
+        }
+
+        function submitTableCorrectionByIndex(index) {
+            const row = document.querySelector(`tr[data-index="${index}"]`);
+            const sectionName = row.dataset.section;
+            const originalContent = row.dataset.original;
+            const correctionInput = row.querySelector('.correction-input');
+            const correctedContent = correctionInput.value.trim();
+            
+            const resumeId = window.latestResumeId || 0;
+           
+            if (!correctedContent) {
+                showNotification('Please enter a correction value', 'error');
+                return;
+            }
+            
+        
+            if (originalContent.trim() === correctedContent.trim()) {
+                showNotification('Correction is the same as original', 'info');
+                return;
+            }
+            
+            submitTableCorrection(resumeId, sectionName, originalContent, correctedContent, index);
+        }
+
+        function editRow(index) {
+            const row = document.querySelector(`tr[data-index="${index}"]`);
+            const contentCell = row.querySelector('.section-content');
+            const editBtn = row.querySelector('.edit-btn');
+            const saveBtn = row.querySelector('.save-btn');
+            const cancelBtn = row.querySelector('.cancel-btn');
+            
+            if (!row.dataset.originalStored) {
+                row.dataset.originalStored = contentCell.innerText;
+            }
+            
+            contentCell.contentEditable = true;
+            contentCell.classList.add('editing');
+            contentCell.focus();
+            
+            editBtn.style.display = 'none';
+            saveBtn.style.display = 'inline-block';
+            cancelBtn.style.display = 'inline-block';
+        }
+
+        function cancelEditRow(index) {
+            const row = document.querySelector(`tr[data-index="${index}"]`);
+            const contentCell = row.querySelector('.section-content');
+            const editBtn = row.querySelector('.edit-btn');
+            const saveBtn = row.querySelector('.save-btn');
+            const cancelBtn = row.querySelector('.cancel-btn');
+            
+            contentCell.innerText = row.dataset.originalStored || row.dataset.original;
+            contentCell.contentEditable = false;
+            contentCell.classList.remove('editing');
+            contentCell.classList.remove('modified');
+            
+            editBtn.style.display = 'inline-block';
+            saveBtn.style.display = 'none';
+            cancelBtn.style.display = 'none';
+        }
+
+        function saveRow(index) {
+            const row = document.querySelector(`tr[data-index="${index}"]`);
+            const contentCell = row.querySelector('.section-content');
+            const editBtn = row.querySelector('.edit-btn');
+            const saveBtn = row.querySelector('.save-btn');
+            const cancelBtn = row.querySelector('.cancel-btn');
+            
+            contentCell.contentEditable = false;
+            contentCell.classList.remove('editing');
+            contentCell.classList.add('modified');
+            
+            editBtn.style.display = 'inline-block';
+            saveBtn.style.display = 'none';
+            cancelBtn.style.display = 'none';
+            
+            showNotification('Changes saved locally. Click Submit Correction to save permanently.', 'success');
+        }
+
+        function correctRow(index) {
+            const row = document.querySelector(`tr[data-index="${index}"]`);
+            const sectionName = row.dataset.section;
+            const originalContent = row.dataset.original;
+            const correctedContent = row.querySelector('.section-content').innerText;
+            
+            const resumeId = window.latestResumeId || 0;
+           
+            if (originalContent.trim() === correctedContent.trim()) {
+                showNotification('No changes to submit.', 'info');
+                return;
+            }
+            
+            submitTableCorrection(resumeId, sectionName, originalContent, correctedContent, index);
+        }
+
+        async function submitTableCorrection(resumeId, fieldName, originalValue, correctedValue, rowIndex) {
+            try {
+                const response = await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        resume_id: resumeId,
+                        field_name: fieldName,
+                        original_value: originalValue,
+                        corrected_value: correctedValue,
+                        feedback_type: 'correction',
+                        confidence_before: 0.5,
+                        source: 'table_edit',
+                        session_id: 'session_' + Date.now(),
+                        comment: 'Table inline correction',
+                        auto_deploy: true
+                    })
+                });
+
+                const feedbackData = await response.json();
+                if (feedbackData.status === 'success') {
+                   
+                    const row = document.querySelector(`tr[data-index="${rowIndex}"]`);
+                    row.classList.add('corrected');
+                    row.dataset.original = correctedValue;
+                    row.dataset.originalStored = correctedValue;
+                    row.querySelector('.section-content').classList.remove('modified');
+                    
+                    showNotification('Correction submitted successfully!', 'success');
+                } else {
+                    showNotification('Error: ' + feedbackData.message, 'error');
+                }
+            } catch (err) {
+                showNotification('Failed to submit correction', 'error');
+            }
+        }
+
+        function showNotification(message, type) {
+            // Remove existing notification if any
+            const existing = document.querySelector('.table-notification');
+            if (existing) existing.remove();
+            
+            const notification = document.createElement('div');
+            notification.className = `table-notification notification-${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                ${message}
+            `;
+            
+            const tableContainer = document.querySelector('.table-view-content');
+            if (tableContainer) {
+                tableContainer.insertBefore(notification, tableContainer.firstChild);
+                setTimeout(() => notification.remove(), 4000);
+            }
+        }
+
         function showResults(content, confidence, isLayout = false, htmlContent = '') {
+            // Reset to single column for regular results
+            resetToSingleColumn();
+
+            document.getElementById('fullTextViewBox').style.display = 'none';
+            document.getElementById('tableViewBox').style.display = 'none';
+
             const confidencePercent = Math.round(confidence * 100);
             const confidencePill = document.getElementById('confidencePill');
-            
+
             confidencePill.className = 'confidence-pill ' + (confidencePercent >= 70 ? 'high' : confidencePercent >= 40 ? 'medium' : 'low');
             confidencePill.innerHTML = `<i class="fas fa-${confidencePercent >= 70 ? 'check' : confidencePercent >= 40 ? 'exclamation' : 'times'}"></i> ${confidencePercent}%`;
 
             const resultsContent = document.getElementById('resultsContent');
-            
+
             if (isLayout && htmlContent) {
                 resultsContent.innerHTML = htmlContent;
                 resultsContent.style.background = 'white';
@@ -468,7 +891,7 @@ function populateDefaultSections() {
             document.getElementById('resultsContent').innerHTML = `<div class="alert alert-danger">${message}</div>`;
         }
 
-        document.getElementById('submitCorrection').addEventListener('click', async function() {
+        document.getElementById('submitCorrection').addEventListener('click', async function () {
             const corrected = document.getElementById('correctedValue').value.trim();
             if (!corrected) { alert('Please enter a value'); return; }
 
@@ -506,3 +929,4 @@ function populateDefaultSections() {
 </body>
 
 </html>
+

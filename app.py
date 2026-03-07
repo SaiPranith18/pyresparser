@@ -327,6 +327,57 @@ def get_feedback_corrections(field_name: str) -> Dict[str, str]:
     return corrections
 
 
+def apply_corrections_to_field(field_name: str, extracted_value: str, original_confidence: float = 0.0) -> Tuple[str, float]:
+    if not extracted_value:
+        return extracted_value, original_confidence
+    
+    current_value = extracted_value
+    current_confidence = original_confidence
+    corrections_applied = []
+    
+    
+    try:
+        legacy_corrections = get_feedback_corrections(field_name)
+        if legacy_corrections:
+            value_lower = current_value.lower()
+            for original, corrected in legacy_corrections.items():
+                if original.lower() in value_lower:
+                    current_value = current_value.replace(original.lower(), corrected)
+                    corrections_applied.append(f"legacy: {original[:20]}...")
+                    logger.info(f"Applied legacy correction to {field_name}: {original[:20]}... -> {corrected[:20]}...")
+    except Exception as e:
+        logger.debug(f"Legacy corrections error for {field_name}: {e}")
+    
+    
+    try:
+        from src.utils.pattern_corrections import apply_pattern_corrections
+        corrected, info = apply_pattern_corrections(field_name, current_value)
+        if info.get("applied"):
+            current_value = corrected
+            corrections_applied.extend(info.get("corrections", []))
+            logger.info(f"Applied pattern corrections to {field_name}: {info.get('corrections', [])}")
+    except Exception as e:
+        logger.debug(f"Pattern corrections error for {field_name}: {e}")
+    
+    
+    try:
+        from src.training.correction_learning import get_correction_model_engine
+        engine = get_correction_model_engine()
+        result = engine.apply(field_name=field_name, value=current_value, confidence=current_confidence)
+        if result.get("applied"):
+            current_value = result.get("corrected_value", current_value)
+            current_confidence = result.get("confidence", current_confidence)
+            corrections_applied.append(f"ml: {result.get('reason')}")
+            logger.info(f"Applied ML correction to {field_name}: {result.get('reason')}")
+    except Exception as e:
+        logger.debug(f"ML corrections error for {field_name}: {e}")
+    
+    if corrections_applied:
+        logger.info(f"Total corrections applied to '{field_name}': {corrections_applied}")
+    
+    return current_value, current_confidence
+
+
 def extract_name_with_filename_fallback(text: str, filename: str, pdf_path: Optional[str] = None) -> Tuple[str, float]:
     
     
@@ -389,21 +440,29 @@ def extract_name_with_filename_fallback(text: str, filename: str, pdf_path: Opti
     return "", 0.0
 
 
-def extract_all_sections(text: str, pdf_path: Optional[str] = None, filename: str = "") -> Dict[str, Tuple[str, float]]:
+def extract_all_sections(text: str, pdf_path: Optional[str] = None, filename: str = "", skip_name: bool = False) -> Dict[str, Tuple[str, float]]:
     results = {}
     
     
-    try:
-        
-        name, conf = extract_name_with_filename_fallback(text, filename, pdf_path)
-        results["name"] = (name, conf)
-        confidence_scores["name_confidence"] = conf
-    except Exception as e:
-        logger.error(f"Error extracting name: {e}")
+    
+    if not skip_name:
+        try:
+            
+            name, conf = extract_name_with_filename_fallback(text, filename, pdf_path)
+            
+            name, conf = apply_corrections_to_field("name", name, conf)
+            results["name"] = (name, conf)
+            confidence_scores["name_confidence"] = conf
+        except Exception as e:
+            logger.error(f"Error extracting name: {e}")
+            results["name"] = ("", 0.0)
+    else:
         results["name"] = ("", 0.0)
     
     try:
         skills, conf = extract_section_from_resume(text, "skills", pdf_path)
+        
+        skills, conf = apply_corrections_to_field("skills", skills, conf)
         results["skills"] = (skills, conf)
         confidence_scores["skills_confidence"] = conf
     except Exception as e:
@@ -412,6 +471,8 @@ def extract_all_sections(text: str, pdf_path: Optional[str] = None, filename: st
     
     try:
         education, conf = extract_section_from_resume(text, "education", pdf_path)
+        
+        education, conf = apply_corrections_to_field("education", education, conf)
         results["education"] = (education, conf)
         confidence_scores["education_confidence"] = conf
     except Exception as e:
@@ -420,6 +481,8 @@ def extract_all_sections(text: str, pdf_path: Optional[str] = None, filename: st
     
     try:
         experience, conf = extract_section_from_resume(text, "experience", pdf_path)
+        
+        experience, conf = apply_corrections_to_field("experience", experience, conf)
         results["experience"] = (experience, conf)
         confidence_scores["experience_confidence"] = conf
     except Exception as e:
@@ -428,6 +491,8 @@ def extract_all_sections(text: str, pdf_path: Optional[str] = None, filename: st
     
     try:
         projects, conf = extract_section_from_resume(text, "projects", pdf_path)
+        
+        projects, conf = apply_corrections_to_field("projects", projects, conf)
         results["projects"] = (projects, conf)
         confidence_scores["projects_confidence"] = conf
     except Exception as e:
@@ -436,6 +501,8 @@ def extract_all_sections(text: str, pdf_path: Optional[str] = None, filename: st
     
     try:
         certifications, conf = extract_section_from_resume(text, "certifications", pdf_path)
+        
+        certifications, conf = apply_corrections_to_field("certifications", certifications, conf)
         results["certifications"] = (certifications, conf)
         confidence_scores["certifications_confidence"] = conf
     except Exception as e:
@@ -445,6 +512,8 @@ def extract_all_sections(text: str, pdf_path: Optional[str] = None, filename: st
     
     try:
         awards, conf = extract_section_from_resume(text, "awards", pdf_path)
+        
+        awards, conf = apply_corrections_to_field("awards", awards, conf)
         results["awards"] = (awards, conf)
         confidence_scores["awards_confidence"] = conf
     except Exception as e:
@@ -454,6 +523,8 @@ def extract_all_sections(text: str, pdf_path: Optional[str] = None, filename: st
     
     try:
         references, conf = extract_section_from_resume(text, "references", pdf_path)
+        
+        references, conf = apply_corrections_to_field("references", references, conf)
         results["references"] = (references, conf)
         confidence_scores["references_confidence"] = conf
     except Exception as e:
@@ -474,6 +545,8 @@ def extract_all_sections(text: str, pdf_path: Optional[str] = None, filename: st
         for section_name, extractor_func in new_sections:
             try:
                 result, conf = extractor_func(text)
+                
+                result, conf = apply_corrections_to_field(section_name, result, conf)
                 results[section_name] = (result, conf)
                 confidence_scores[f"{section_name}_confidence"] = conf
             except Exception as e:
@@ -489,6 +562,8 @@ def extract_all_sections(text: str, pdf_path: Optional[str] = None, filename: st
     for section_name in additional_sections:
         try:
             result, conf = extract_section_from_resume(text, section_name, pdf_path)
+            
+            result, conf = apply_corrections_to_field(section_name, result, conf)
             results[section_name] = (result, conf)
             confidence_scores[f"{section_name}_confidence"] = conf
         except Exception as e:
@@ -789,9 +864,9 @@ def detect_headings_api():
         
         
         try:
-            all_sections = extract_all_sections(text, file_path, file.filename)
+            all_sections = extract_all_sections(text, file_path, file.filename, skip_name=True)
             
-            # Build sections table for UI display
+            
             sections_table = []
             for section_name, (data, confidence) in all_sections.items():
                 if data and data.strip():
